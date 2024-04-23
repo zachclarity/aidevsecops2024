@@ -1,1 +1,1 @@
-AI Knowledge .  Build solutions using AI
+AWS Knowledge .  Build solutions on AWS

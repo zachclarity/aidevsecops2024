@@ -1,1 +1,1 @@
-AI Knowledge .  Build solutions using AI
+AZURE Knowledge .  Build solutions using AZURE

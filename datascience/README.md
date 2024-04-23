@@ -1,1 +1,1 @@
-AI Knowledge .  Build solutions using AI
+Data Science Knowledge .  Build Data Science solutions
