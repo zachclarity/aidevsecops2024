@@ -1,5 +1,8 @@
 TDB ....
-Here are some key software design principles along with example use case diagrams:
+Here are the SOLID key software design principles along with example use case diagrams:
+
+<a href="https://github.com/arslanaybars/solid.practices">Example Repo with code samples.</a>
+<hr/>
 
 1. Single Responsibility Principle (SRP)
    - A class should have only one reason to change.
