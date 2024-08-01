@@ -2,9 +2,13 @@
 <h1>A Place to learn how to design,develop,deploy and maintain IT Solutions, with a goal of gaining the knowledge to get Certified in an area.</h1>
 <hr>
 Let's share knowledge and Learn Together by building real world solutions using some of the latest technologies. We will include example code, configuration, study notes and more.
+
+#AWS Certified Developer - Associate
 <ul>
-<li>AWS Certified Developer - Associate</li>
-- <a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
+<li><a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
+</li>
+</ul>
+<ul>
 <li><a href="https://frontendmasters.com/">Frontend Master Classes</a><li>
 <li>TBD -- Backend Master Classes</li>
 <li>More TBD ???</li>
