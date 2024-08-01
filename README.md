@@ -3,6 +3,26 @@
 <hr>
 Let's share knowledge and Learn Together by building real world solutions using some of the latest technologies. We will include example code, configuration, study notes and more.
 
+#AWS Solutions Architect
+<ul>
+<li><a href="https://explore.skillbuilder.aws/learn/course/internal/view/elearning/19378/aws-cloud-quest-generative-ai">AWS Skill builder</a></li>
+<li><a href="aws/TBD">20 Day Study Plan</a></li>
+</ul>
+#AWS AI/ML engineer
+<ul>
+<li><a href="https://skillbuilder.aws/products#machine-learning">AWS Skill builder</a></li>
+<li><a href="aws/TBD">20 Day Study Plan</a></li>
+</ul>
+#AWS Certified Developer - Associate
+<ul>
+<li><a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
+</li>
+</ul>
+#AWS Certified Developer - Associate
+<ul>
+<li><a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
+</li>
+</ul>
 #AWS Certified Developer - Associate
 <ul>
 <li><a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
