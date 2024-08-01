@@ -247,11 +247,7 @@
 
 
 ### Databases: RDS, DynamoDB, Redshift
-Certainly. I'll expand on the database section of the AWS course overview with more details about AWS database services.
 
-
-
-6. Databases 
    - Amazon RDS (Relational Database Service):
      * Managed relational database service supporting multiple engines
      * Supported database engines:
