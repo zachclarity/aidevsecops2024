@@ -8,14 +8,14 @@ AWS Knowledge .  Build solutions on AWS#AWS Solutions Architect
 <li><a href="https://skillbuilder.aws/products#machine-learning">AWS Skill builder</a></li>
 <li><a href="aws/TBD">20 Day Study Plan</a></li>
 </ul>
-#AWS Certified Developer - Associate
+#AWS Certified Security
 <ul>
-<li><a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
+<li><a href="TBD">20 Day Study Plan</a>
 </li>
 </ul>
-#AWS Certified Developer - Associate
+#AWS Certified Networking
 <ul>
-<li><a href="aws/developercertassoc/README.md">20 Day Study Plan</a>
+<li><a href="aws/TBD">20 Day Study Plan</a>
 </li>
 </ul>
 #AWS Certified Developer - Associate
