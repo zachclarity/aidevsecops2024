@@ -3,6 +3,8 @@
 <hr>
 Let's share knowledge and Learn Together by building real world solutions using some of the latest technologies. We will include example code, configuration, study notes and more.
 <ul>
+<li>AWS Certified Developer - Associate</li>
+- [20 Day Study Plan](aws/developercertassoc/README.md)
 <li><a href="https://frontendmasters.com/">Frontend Master Classes</a><li>
 <li>TBD -- Backend Master Classes</li>
 <li>More TBD ???</li>
