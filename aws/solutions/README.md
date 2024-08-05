@@ -34,6 +34,104 @@ PrivateRouteTable:
 - Separate public and private subnets for better security
 - Use VPC Flow Logs for network monitoring
 
+### VPC Networking Questions
+
+# AWS Solutions Architect Certification Sample Questions: VPC and Networking
+
+1. Which of the following is true regarding VPC peering?
+   A) VPC peering allows transitive routing
+   B) VPC peering can be established between VPCs in different AWS accounts
+   C) VPC peering requires both VPCs to have overlapping CIDR blocks
+   D) VPC peering can only be established within the same region
+
+2. A company wants to connect its on-premises data center to AWS. Which of the following is NOT a valid option?
+   A) AWS Direct Connect
+   B) AWS VPN
+   C) VPC peering
+   D) AWS Site-to-Site VPN
+
+3. Which AWS service allows you to create a private network connection between your VPC and another AWS service without traversing the public internet?
+   A) VPC endpoints
+   B) NAT gateway
+   C) Internet gateway
+   D) VPN gateway
+
+4. You have a web application in a VPC that needs to access an S3 bucket. What's the most secure way to allow this access without routing traffic through the public internet?
+   A) Use a NAT gateway
+   B) Use an internet gateway
+   C) Use a VPC endpoint for S3
+   D) Use a VPN connection
+
+5. Which of the following is true about subnets in a VPC?
+   A) A subnet can span multiple Availability Zones
+   B) You can have only one public subnet in a VPC
+   C) A subnet is bound to a single Availability Zone
+   D) All subnets in a VPC must be either public or private
+
+6. You need to allow instances in a private subnet to access the internet for software updates. Which AWS resource should you use?
+   A) Internet gateway
+   B) NAT gateway
+   C) VPC endpoint
+   D) Egress-only internet gateway
+
+7. Which of the following is NOT a characteristic of a default VPC?
+   A) It has a CIDR block of 172.31.0.0/16
+   B) It comes with a preconfigured internet gateway
+   C) All of its subnets are public by default
+   D) It spans multiple regions
+
+8. You want to control inbound and outbound traffic at the subnet level in your VPC. Which AWS resource should you use?
+   A) Security group
+   B) Network ACL
+   C) Route table
+   D) VPC flow logs
+
+9. Which statement is true about Elastic IP addresses?
+   A) They can be moved between instances in different regions
+   B) They are free as long as they are associated with a running instance
+   C) You can have an unlimited number of Elastic IP addresses in your account
+   D) They can be associated with network interfaces as well as EC2 instances
+
+10. You have an application that needs to access DynamoDB from within a VPC without going through the public internet. What's the most cost-effective way to achieve this?
+    A) Use a NAT gateway
+    B) Use an internet gateway
+    C) Use a Gateway VPC endpoint
+    D) Use an Interface VPC endpoint
+
+Answers:
+1. B
+2. C
+3. A
+4. C
+5. C
+6. B
+7. D
+8. B
+9. D
+10. C
+
+Explanations:
+
+1. B is correct. VPC peering can be established between VPCs in different AWS accounts. It doesn't allow transitive routing, doesn't require overlapping CIDR blocks, and can be established between regions.
+
+2. C is incorrect. VPC peering is used to connect VPCs, not on-premises data centers to AWS. The other options are valid for connecting on-premises networks to AWS.
+
+3. A is correct. VPC endpoints allow private connections to supported AWS services without requiring an internet gateway, NAT device, VPN connection, or AWS Direct Connect connection.
+
+4. C is correct. A VPC endpoint for S3 provides the most secure way to access S3 from within a VPC without traversing the public internet.
+
+5. C is correct. A subnet is always bound to a single Availability Zone and cannot span multiple AZs.
+
+6. B is correct. A NAT gateway allows instances in a private subnet to access the internet for outbound traffic while preventing inbound traffic from the internet.
+
+7. D is incorrect. A default VPC is created per region, not spanning multiple regions.
+
+8. B is correct. Network ACLs operate at the subnet level and control inbound and outbound traffic for subnets.
+
+9. D is correct. Elastic IP addresses can be associated with both EC2 instances and network interfaces.
+
+10. C is correct. A Gateway VPC endpoint for DynamoDB is the most cost-effective way to access DynamoDB from within a VPC without going through the public internet. It's free and doesn't require provisioning of any additional resources.
+
 ## 2. Database (RDS)
 
 Amazon RDS provides managed relational databases, reducing administrative overhead.
