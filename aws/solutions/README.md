@@ -190,7 +190,7 @@ DatabaseSecurityGroup:
    - Use Amazon CloudWatch for monitoring metrics, collecting logs, and setting alarms
    - Implement AWS CloudTrail for API call logging and auditing
 
-2. **CI/CD Pipeline**
+2. **CI/CD Pipeline**  NOTE: thius is beig deprecated ....  GitLab/Github Actions will be added. 
    - Use AWS CodePipeline for continuous integration and deployment
    - Integrate with AWS CodeBuild for building and testing code
 
