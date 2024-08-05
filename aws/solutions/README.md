@@ -36,7 +36,7 @@ PrivateRouteTable:
 
 ### VPC Networking Questions
 
-# AWS Solutions Architect Certification Sample Questions: VPC and Networking
+### AWS Solutions Architect Certification Sample Questions: VPC and Networking
 
 1. Which of the following is true regarding VPC peering?
    A) VPC peering allows transitive routing
