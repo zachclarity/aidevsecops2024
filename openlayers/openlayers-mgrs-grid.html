@@ -30,6 +30,26 @@
             })
         });
 
+        function toMGRS(lon, lat) {
+            const utm = proj4('EPSG:4326', 'EPSG:3857', [lon, lat]);
+            const x = utm[0];
+            const y = utm[1];
+            
+            const zone = Math.floor((lon + 180) / 6) + 1;
+            const letter = 'CDEFGHJKLMNPQRSTUVWXX'[Math.floor((lat + 80) / 8)];
+            
+            const easting = Math.floor((x % 1000000) / 100000);
+            const northing = Math.floor((y % 1000000) / 100000);
+            
+            const eastingLetters = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+            const northingLetters = 'ABCDEFGHJKLMNPQRSTUV';
+            
+            const squareLetter1 = eastingLetters[easting % 8];
+            const squareLetter2 = northingLetters[northing % 20];
+            
+            return `${zone}${letter}${squareLetter1}${squareLetter2}`;
+        }
+
         // Function to create MGRS grid features
         function createMGRSGrid(extent, resolution) {
             const features = [];
