@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenLayers Map with MGRS Grid Layer</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css">
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+    <style>
+        .map {
+            width: 100%;
+            height: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map" class="map"></div>
+    <script>
+        // Create the map
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: ol.proj.fromLonLat([0, 0]),
+                zoom: 2
+            })
+        });
+
+        // Function to create MGRS grid features
+        function createMGRSGrid(extent, resolution) {
+            const features = [];
+            const size = 100000; // 100km grid size
+            const x0 = Math.floor(extent[0] / size) * size;
+            const x1 = Math.ceil(extent[2] / size) * size;
+            const y0 = Math.floor(extent[1] / size) * size;
+            const y1 = Math.ceil(extent[3] / size) * size;
+
+            for (let x = x0; x < x1; x += size) {
+                for (let y = y0; y < y1; y += size) {
+                    const coords = [
+                        [x, y],
+                        [x + size, y],
+                        [x + size, y + size],
+                        [x, y + size],
+                        [x, y]
+                    ];
+                    const geometry = new ol.geom.Polygon([coords]);
+                    const feature = new ol.Feature(geometry);
+                    const center = geometry.getInteriorPoint().getCoordinates();
+                    const lonLat = ol.proj.transform(center, 'EPSG:3857', 'EPSG:4326');
+                    const mgrs = ol.coordinate.toStringMGRS(lonLat);
+                    feature.set('mgrs', mgrs);
+                    features.push(feature);
+                }
+            }
+            return features;
+        }
+
+        // Create the MGRS grid layer
+        const mgrsGridSource = new ol.source.Vector({
+            loader: function(extent, resolution, projection) {
+                const features = createMGRSGrid(extent, resolution);
+                mgrsGridSource.addFeatures(features);
+            },
+            strategy: ol.loadingstrategy.bbox
+        });
+
+        const mgrsGridLayer = new ol.layer.Vector({
+            source: mgrsGridSource,
+            style: function(feature) {
+                return new ol.style.Style({
+                    stroke: new ol.style.Stroke({
+                        color: 'rgba(255,120,0,0.9)',
+                        width: 1
+                    }),
+                    text: new ol.style.Text({
+                        text: feature.get('mgrs'),
+                        font: '12px Calibri,sans-serif',
+                        fill: new ol.style.Fill({
+                            color: 'rgba(0,0,0,1)'
+                        }),
+                        stroke: new ol.style.Stroke({
+                            color: 'rgba(255,255,255,1)',
+                            width: 3
+                        })
+                    })
+                });
+            }
+        });
+
+        // Add the MGRS grid layer to the map
+        map.addLayer(mgrsGridLayer);
+    </script>
+</body>
+</html>
