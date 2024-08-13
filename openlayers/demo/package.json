@@ -1,13 +1,22 @@
 {
-    "name": "graticule",
+    "name": "olmap-vite-react-app",
+    "private": true,
+    "version": "0.0.0",
+    "type": "module",
+    "scripts": {
+      "dev": "vite",
+      "build": "vite build",
+      "preview": "vite preview"
+    },
     "dependencies": {
-      "ol": "10.0.0"
+      "ol": "^7.3.0",
+      "react": "^18.2.0",
+      "react-dom": "^18.2.0"
     },
     "devDependencies": {
-      "vite": "^3.2.3"
-    },
-    "scripts": {
-      "start": "vite",
-      "build": "vite build"
+      "@types/react": "^18.0.28",
+      "@types/react-dom": "^18.0.11",
+      "@vitejs/plugin-react": "^3.1.0",
+      "vite": "^4.2.0"
     }
   }
