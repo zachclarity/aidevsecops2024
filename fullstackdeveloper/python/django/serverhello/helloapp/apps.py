@@ -1,4 +1,4 @@
-from django.apps import AppConfig
+jefrom django.apps import AppConfig
 
 
 class HelloappConfig(AppConfig):
