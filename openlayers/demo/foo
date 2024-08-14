@@ -1,0 +1,152 @@
+project-root/
+├── index.html
+├── package.json
+├── vite.config.js
+├── src/
+│   ├── main.jsx
+│   ├── App.jsx
+│   ├── components/
+│   │   └── MapComponent.jsx
+│   └── styles/
+│       └── App.css
+
+// index.html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>OlMap Vite React App</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+
+// package.json
+{
+  "name": "olmap-vite-react-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ol": "^7.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@vitejs/plugin-react": "^3.1.0",
+    "vite": "^4.2.0"
+  }
+}
+
+// vite.config.js
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+})
+
+// src/main.jsx
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import App from './App'
+import './styles/App.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+)
+
+// src/App.jsx
+import React from 'react'
+import MapComponent from './components/MapComponent'
+
+function App() {
+  return (
+    <div className="App">
+      <h1>OlMap Vite React App</h1>
+      <MapComponent />
+    </div>
+  )
+}
+
+export default App
+
+// src/components/MapComponent.jsx
+import React, { useRef, useEffect } from 'react';
+import OlMap from 'ol/Map';
+import OSM from 'ol/source/OSM';
+import TileLayer from 'ol/layer/Tile';
+import View from 'ol/View';
+import Graticule from 'ol/layer/Graticule';
+import Stroke from 'ol/style/Stroke';
+import { fromLonLat } from 'ol/proj';
+
+const MapComponent = () => {
+  const mapRef = useRef();
+
+  useEffect(() => {
+    const osmLayer = new TileLayer({
+      source: new OSM({
+        wrapX: false,
+      }),
+    });
+
+    const graticuleLayer = new Graticule({
+      strokeStyle: new Stroke({
+        color: 'rgba(255,120,0,0.9)',
+        width: 2,
+        lineDash: [0.5, 4],
+      }),
+      showLabels: true,
+      wrapX: false,
+    });
+
+    const map = new OlMap({
+      layers: [osmLayer, graticuleLayer],
+      view: new View({
+        center: fromLonLat([4.8, 47.75]),
+        zoom: 5,
+      }),
+      target: mapRef.current,
+    });
+
+    return () => {
+      if (map) {
+        map.setTarget(null);
+      }
+    };
+  }, []);
+
+  return <div ref={mapRef} className="map-container" style={{ width: '100%', height: '400px' }} />;
+};
+
+export default MapComponent;
+
+// src/styles/App.css
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.App {
+  font-family: Arial, sans-serif;
+}
+
+.map-container {
+  border: 1px solid #ddd;
+  margin-top: 1rem;
+}
