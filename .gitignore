@@ -128,3 +128,8 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+docker/simpledemo/backend/.gradle/
+docker/simpledemo/backend/build/
+docker/simpledemo/.DS_Store
+docker/.DS_Store
+.DS_Store
