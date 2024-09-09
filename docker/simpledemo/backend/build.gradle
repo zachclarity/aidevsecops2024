@@ -25,6 +25,63 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
-	useJUnitPlatform()
+def sourceDir = '../frontend/build'
+def targetDir = 'src/main/resources/static'
+def nextjsDir = '../frontend'
+
+tasks.register('buildNextjs', Exec) {
+    workingDir nextjsDir
+    if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
+        commandLine 'cmd', '/c', 'npm', 'run', 'build'
+    } else {
+        commandLine 'npm', 'run', 'build'
+    }
+}
+
+tasks.register('copyFiles', Copy) {
+    from sourceDir
+    into targetDir
+}
+
+tasks.register('cleanStatic') {
+    doLast {
+        fileTree(targetDir).visit { FileVisitDetails details ->
+            if (details.file.isFile()) {
+                details.file.delete()
+            }
+        }
+    }
+}
+
+tasks.named('bootJar') {
+    dependsOn 'copyFiles'
+}
+
+tasks.named('jar') {
+    dependsOn 'copyFiles'
+}
+
+tasks.named('classes') {
+    dependsOn 'copyFiles'
+}
+
+tasks.named('clean') {
+    dependsOn 'cleanStatic'
+}
+
+
+tasks.named('copyFiles').configure {
+    mustRunAfter 'processResources', 'buildNextjs'
+}
+
+tasks.named('processResources').configure {
+    mustRunAfter 'cleanStatic'
+}
+
+tasks.named('build').configure {
+    dependsOn 'buildNextjs'
+}
+
+tasks.named('processResources').configure {
+    mustRunAfter 'cleanStatic'
 }
