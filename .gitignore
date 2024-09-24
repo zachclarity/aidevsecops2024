@@ -135,3 +135,4 @@ docker/.DS_Store
 .DS_Store
 
 docker/simpledemo/backend/src/main/resources/static
+docker/simpledemo/backend/bin
