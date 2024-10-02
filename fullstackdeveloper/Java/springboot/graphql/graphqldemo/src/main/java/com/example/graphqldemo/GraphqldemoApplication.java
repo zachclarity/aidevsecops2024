@@ -33,6 +33,31 @@ record Book(String id, String name, int pageCount, String authorId) {
     }
 }
 
+/*
+ 
+query MyQuery {
+  bookById(id: "book-1") {
+    name
+  }
+}
+
+curl "http://localhost:9999/graphql" ^
+  -H "Accept-Language: en-US,en;q=0.9" ^
+  -H "Connection: keep-alive" ^
+  -H "Origin: http://localhost:9999" ^
+  -H "Referer: http://localhost:9999/graphiql?path=/graphql" ^
+  -H "Sec-Fetch-Dest: empty" ^
+  -H "Sec-Fetch-Mode: cors" ^
+  -H "Sec-Fetch-Site: same-origin" ^
+  -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36" ^
+  -H "accept: application/json, multipart/mixed" ^
+  -H "content-type: application/json" ^
+  -H ^"sec-ch-ua: ^\^"Chromium^\^";v=^\^"122^\^", ^\^"Not(A:Brand^\^";v=^\^"24^\^", ^\^"Google Chrome^\^";v=^\^"122^\^"^" ^
+  -H "sec-ch-ua-mobile: ?0" ^
+  -H ^"sec-ch-ua-platform: ^\^"Windows^\^"^" ^
+  --data-raw ^"^{^\^"query^\^":^\^"query MyQuery ^{^\^\n  bookById(id: ^\^\^\^"book-1^\^\^\^") ^{^\^\n    name^\^\n  ^}^\^\n^}^\^",^\^"operationName^\^":^\^"MyQuery^\^"^}^"
+ * 
+ */
 @Controller
 class BookController {
 
