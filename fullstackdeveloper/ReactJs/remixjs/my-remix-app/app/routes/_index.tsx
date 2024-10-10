@@ -1,3 +1,6 @@
+import pkg from '@apollo/client';
+const {gql, useQuery} = pkg;
+
 import type { MetaFunction } from "@remix-run/node";
 
 export const meta: MetaFunction = () => {
@@ -7,6 +10,27 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+export function Book() {
+  
+  const MY_QUERY = gql`
+    query MyQuery {
+      bookById(id: "book-1") {
+        name
+      }
+    }
+  `;
+  
+  const { loading, error, data } = useQuery(MY_QUERY);
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error:</p>;
+
+  return (
+   <div><h1>{data.bookById.name}</h1></div>
+  );
+}
+
+
 export default function Index() {
   return (
     <div className="flex h-screen items-center justify-center">
@@ -15,6 +39,7 @@ export default function Index() {
           <h1 className="leading text-2xl font-bold text-gray-800 dark:text-gray-100">
             Welcome to <span className="sr-only">Remix</span>
           </h1>
+          <div><Book/></div>
           <div className="h-[144px] w-[434px]">
             <img
               src="/logo-light.png"
