@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .body-part {
+            fill: #e0e0e0;
+            stroke: #000;
+            stroke-width: 2;
+            transition: fill 0.3s;
+            cursor: pointer;
+        }
+        .body-part:hover {
+            fill: #b0b0b0;
+        }
+        .selected {
+            fill: #ff9999 !important;
+        }
+        #info-box {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex; flex-direction: column; align-items: center;">
+        <svg viewBox="0 0 200 400" width="300" height="600">
+            <!-- Head -->
+            <circle class="body-part" cx="100" cy="40" r="20" data-part="head"/>
+            
+            <!-- Neck -->
+            <rect class="body-part" x="95" y="60" width="10" height="20" data-part="neck"/>
+            
+            <!-- Torso -->
+            <rect class="body-part" x="70" y="80" width="60" height="100" data-part="torso"/>
+            
+            <!-- Left Arm -->
+            <path class="body-part" d="M70 85 L40 150 L30 200 L45 200 L55 150 L70 100" data-part="left-arm"/>
+            
+            <!-- Right Arm -->
+            <path class="body-part" d="M130 85 L160 150 L170 200 L155 200 L145 150 L130 100" data-part="right-arm"/>
+            
+            <!-- Left Hand -->
+            <circle class="body-part" cx="37.5" cy="210" r="10" data-part="left-hand"/>
+            
+            <!-- Right Hand -->
+            <circle class="body-part" cx="162.5" cy="210" r="10" data-part="right-hand"/>
+            
+            <!-- Left Leg -->
+            <path class="body-part" d="M70 180 L60 280 L50 350 L80 350 L90 280 L90 180" data-part="left-leg"/>
+            
+            <!-- Right Leg -->
+            <path class="body-part" d="M130 180 L140 280 L150 350 L120 350 L110 280 L110 180" data-part="right-leg"/>
+            
+            <!-- Left Foot -->
+            <path class="body-part" d="M50 350 L30 360 L50 370 L80 370 L80 350" data-part="left-foot"/>
+            
+            <!-- Right Foot -->
+            <path class="body-part" d="M150 350 L170 360 L150 370 L120 370 L120 350" data-part="right-foot"/>
+        </svg>
+        
+        <div id="info-box">
+            Click on any body part to see information
+        </div>
+    </div>
+
+    <script>
+        const bodyParts = document.querySelectorAll('.body-part');
+        const infoBox = document.getElementById('info-box');
+        
+        const bodyPartInfo = {
+            'head': 'Head - Contains the brain and main sensory organs',
+            'neck': 'Neck - Connects head to torso and contains vital vessels',
+            'torso': 'Torso - Houses vital organs and supports upper body',
+            'left-arm': 'Left Arm - Upper limb for reaching and lifting',
+            'right-arm': 'Right Arm - Upper limb for reaching and lifting',
+            'left-hand': 'Left Hand - For grasping and fine motor skills',
+            'right-hand': 'Right Hand - For grasping and fine motor skills',
+            'left-leg': 'Left Leg - Lower limb for walking and standing',
+            'right-leg': 'Right Leg - Lower limb for walking and standing',
+            'left-foot': 'Left Foot - For balance and locomotion',
+            'right-foot': 'Right Foot - For balance and locomotion'
+        };
+
+        let selectedPart = null;
+
+        bodyParts.forEach(part => {
+            part.addEventListener('click', () => {
+                // Remove previous selection
+                if (selectedPart) {
+                    selectedPart.classList.remove('selected');
+                }
+                
+                // Add new selection
+                part.classList.add('selected');
+                selectedPart = part;
+                
+                // Update info box
+                const partName = part.getAttribute('data-part');
+                infoBox.textContent = bodyPartInfo[partName];
+            });
+        });
+    </script>
+</body>
+</html>
