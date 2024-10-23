@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            position: relative;
+            display: inline-block;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .burn-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .cut-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .clear-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .overlay {
+            pointer-events: all;
+        }
+
+        .body-base {
+            pointer-events: none;
+        }
+
+        .active {
+            outline: 3px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="burn-btn" onclick="setDrawingType('burn')">Draw Burn (Blue)</button>
+        <button class="cut-btn" onclick="setDrawingType('cut')">Draw Cut (Red)</button>
+        <button class="clear-btn" onclick="clearOverlays()">Clear All</button>
+        <span id="mode-indicator">Current Mode: None</span>
+    </div>
+    
+    <div class="container">
+        <svg width="300" height="500" viewBox="0 0 300 500">
+            <!-- Base body outline -->
+            <g class="body-base" fill="#f0f0f0" stroke="black" stroke-width="2">
+                <!-- Head -->
+                <circle cx="150" cy="60" r="40" />
+                
+                <!-- Neck -->
+                <rect x="135" y="100" width="30" height="20" />
+                
+                <!-- Torso -->
+                <path d="M110,120 L190,120 L200,300 L100,300 Z" />
+                
+                <!-- Arms -->
+                <path d="M190,120 L240,200 L230,210 L180,140 Z" /> <!-- Right arm -->
+                <path d="M110,120 L60,200 L70,210 L120,140 Z" /> <!-- Left arm -->
+                
+                <!-- Legs -->
+                <path d="M100,300 L80,450 L120,450 L140,300 Z" /> <!-- Left leg -->
+                <path d="M200,300 L220,450 L180,450 L160,300 Z" /> <!-- Right leg -->
+                
+                <!-- Labels -->
+                <g fill="black" font-size="12" text-anchor="middle">
+                    <text x="150" y="65">Head</text>
+                    <text x="150" y="200">Torso</text>
+                    <text x="220" y="180">Arm</text>
+                    <text x="80" y="180">Arm</text>
+                    <text x="100" y="400">Leg</text>
+                    <text x="200" y="400">Leg</text>
+                </g>
+            </g>
+            
+            <!-- Overlay group for markings -->
+            <g class="overlay"></g>
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.querySelector('svg');
+        const overlay = document.querySelector('.overlay');
+        const modeIndicator = document.getElementById('mode-indicator');
+        let currentType = null;
+        let isDrawing = false;
+        let currentGroup = null;
+        let startX, startY;
+
+        const markingTypes = {
+            burn: {
+                color: '#007bff',
+                label: 'Burn',
+                opacity: 0.2
+            },
+            cut: {
+                color: '#dc3545',
+                label: 'Cut',
+                opacity: 0.2
+            }
+        };
+
+        function setDrawingType(type) {
+            // Reset all buttons
+            document.querySelectorAll('button').forEach(btn => btn.classList.remove('active'));
+            
+            if (currentType === type) {
+                // Toggle off if clicking the same button
+                currentType = null;
+                modeIndicator.textContent = 'Current Mode: None';
+            } else {
+                // Set new type
+                currentType = type;
+                // Highlight the active button
+                document.querySelector(`.${type}-btn`).classList.add('active');
+                modeIndicator.textContent = `Current Mode: ${markingTypes[type].label}`;
+            }
+        }
+
+        function clearOverlays() {
+            while (overlay.firstChild) {
+                overlay.removeChild(overlay.firstChild);
+            }
+        }
+
+        function createMarking(x, y) {
+            if (!currentType) return null;
+
+            const group = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+            const ellipse = document.createElementNS("http://www.w3.org/2000/svg", 'ellipse');
+            const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+            
+            const style = markingTypes[currentType];
+            
+            ellipse.setAttribute('fill', style.color);
+            ellipse.setAttribute('fill-opacity', style.opacity);
+            ellipse.setAttribute('stroke', style.color);
+            ellipse.setAttribute('stroke-width', '2');
+            
+            text.setAttribute('fill', style.color);
+            text.setAttribute('font-size', '12');
+            text.setAttribute('text-anchor', 'middle');
+            text.textContent = style.label;
+            
+            group.appendChild(ellipse);
+            group.appendChild(text);
+            
+            return group;
+        }
+
+        svg.addEventListener('mousedown', (e) => {
+            if (!currentType) return;
+            
+            isDrawing = true;
+            const rect = svg.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            currentGroup = createMarking();
+            if (currentGroup) {
+                overlay.appendChild(currentGroup);
+            }
+        });
+
+        svg.addEventListener('mousemove', (e) => {
+            if (!isDrawing || !currentGroup) return;
+            
+            const rect = svg.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            const cx = (startX + currentX) / 2;
+            const cy = (startY + currentY) / 2;
+            const rx = Math.abs(currentX - startX) / 2;
+            const ry = Math.abs(currentY - startY) / 2;
+            
+            const ellipse = currentGroup.querySelector('ellipse');
+            const text = currentGroup.querySelector('text');
+            
+            ellipse.setAttribute('cx', cx);
+            ellipse.setAttribute('cy', cy);
+            ellipse.setAttribute('rx', rx);
+            ellipse.setAttribute('ry', ry);
+            
+            // Position text in center of ellipse
+            text.setAttribute('x', cx);
+            text.setAttribute('y', cy + 5); // Small offset for better centering
+        });
+
+        svg.addEventListener('mouseup', () => {
+            isDrawing = false;
+            currentGroup = null;
+        });
+    </script>
+</body>
+</html>
