@@ -1,11 +1,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
+import { BitshiftCrypto } from './bitshift-encryption'
 
 const useHttpCache = (options = {}) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
+  const [key, setKey] = useState(42);
+  const crypto = new BitshiftCrypto(key);
+
   
   const cacheKey = options.cacheKey || 'offline_requests';
 
@@ -95,6 +99,8 @@ const useHttpCache = (options = {}) => {
       body: JSON.stringify(data),
       ...requestOptions
     };
+    const encrypted = crypto.encrypt(JSON.stringify(data));
+    console.log(data.name)
 
     try {
       if (!isOnline) {
@@ -103,9 +109,8 @@ const useHttpCache = (options = {}) => {
       }
 
       const response = await fetch(url, config);
-      
       if (!response.ok) {
-        cacheRequest(url, data, config);
+        cacheRequest(url, encrypted, config);
         return { cached: true, data };
       //  throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -115,10 +120,10 @@ const useHttpCache = (options = {}) => {
     } catch (err) {
       setError(err);
       if (!isOnline) {
-        cacheRequest(url, data, config);
+        cacheRequest(url, encrypted, config);
         return { cached: true, data };
       }
-      cacheRequest(url, data, config);
+      cacheRequest(url, encrypted, config);
       return { cached: true, data };
 //      throw err;
     }

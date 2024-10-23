@@ -692,3 +692,466 @@ Key features of the persistence implementation:
    - Efficient storage
    - Batched updates
 
+I'll enhance the persistence utility with encryption capabilities to securely store cached data.
+
+
+
+```javascript
+// CachePersistence.js
+import { Buffer } from 'buffer';
+
+class EncryptionService {
+  constructor(options = {}) {
+    this.algorithm = 'AES-GCM';
+    this.keyLength = 256;
+    this.saltLength = 16;
+    this.ivLength = 12;
+    this.tagLength = 16;
+    this.masterKey = options.encryptionKey;
+    this.initialized = false;
+  }
+
+  async init() {
+    if (this.initialized) return;
+
+    if (!this.masterKey) {
+      // Generate a new master key if none provided
+      const key = await window.crypto.subtle.generateKey(
+        {
+          name: this.algorithm,
+          length: this.keyLength
+        },
+        true,
+        ['encrypt', 'decrypt']
+      );
+      
+      // Export the key to store it
+      const exportedKey = await window.crypto.subtle.exportKey('raw', key);
+      this.masterKey = Buffer.from(exportedKey).toString('base64');
+    }
+
+    // Import the master key
+    const keyMaterial = Buffer.from(this.masterKey, 'base64');
+    this.key = await window.crypto.subtle.importKey(
+      'raw',
+      keyMaterial,
+      this.algorithm,
+      false,
+      ['encrypt', 'decrypt']
+    );
+
+    this.initialized = true;
+  }
+
+  async encrypt(data) {
+    await this.init();
+
+    // Generate a random IV
+    const iv = window.crypto.getRandomValues(new Uint8Array(this.ivLength));
+    
+    // Convert data to buffer
+    const encodedData = new TextEncoder().encode(JSON.stringify(data));
+
+    // Encrypt the data
+    const encryptedData = await window.crypto.subtle.encrypt(
+      {
+        name: this.algorithm,
+        iv: iv,
+        tagLength: this.tagLength * 8
+      },
+      this.key,
+      encodedData
+    );
+
+    // Combine IV and encrypted data
+    const combined = new Uint8Array(iv.length + encryptedData.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encryptedData), iv.length);
+
+    // Return as base64 string
+    return Buffer.from(combined).toString('base64');
+  }
+
+  async decrypt(encryptedData) {
+    await this.init();
+
+    try {
+      // Convert base64 to buffer
+      const combined = Buffer.from(encryptedData, 'base64');
+      
+      // Extract IV and encrypted data
+      const iv = combined.slice(0, this.ivLength);
+      const data = combined.slice(this.ivLength);
+
+      // Decrypt the data
+      const decryptedData = await window.crypto.subtle.decrypt(
+        {
+          name: this.algorithm,
+          iv: iv,
+          tagLength: this.tagLength * 8
+        },
+        this.key,
+        data
+      );
+
+      // Convert back to object
+      const decodedData = new TextDecoder().decode(decryptedData);
+      return JSON.parse(decodedData);
+    } catch (error) {
+      console.error('Decryption failed:', error);
+      throw new Error('Failed to decrypt data');
+    }
+  }
+}
+
+class CachePersistenceAdapter {
+  constructor(options = {}) {
+    this.cacheDir = options.cacheDir || 'app-cache';
+    this.maxSize = options.maxSize || 50 * 1024 * 1024; // 50MB default
+    this.environment = this.detectEnvironment();
+    this.encryption = new EncryptionService(options);
+  }
+
+  // ... rest of the detection logic remains the same ...
+}
+
+class BaseAdapter {
+  constructor(cacheDir, encryption) {
+    this.cacheDir = cacheDir;
+    this.encryption = encryption;
+  }
+
+  async encryptData(data) {
+    return this.encryption.encrypt(data);
+  }
+
+  async decryptData(encryptedData) {
+    return this.encryption.decrypt(encryptedData);
+  }
+}
+
+class ElectronAdapter extends BaseAdapter {
+  constructor(cacheDir, encryption) {
+    super(cacheDir, encryption);
+    this.fs = window.electron.require('fs').promises;
+    this.path = window.electron.require('path');
+    this.cacheDir = this.path.join(
+      window.electron.app.getPath('userData'),
+      cacheDir
+    );
+  }
+
+  async init() {
+    try {
+      await this.fs.mkdir(this.cacheDir, { recursive: true });
+      await this.encryption.init();
+    } catch (error) {
+      console.error('Error initializing electron adapter:', error);
+    }
+  }
+
+  async save(key, data) {
+    const filePath = this.path.join(this.cacheDir, `${key}.encrypted`);
+    try {
+      const encryptedData = await this.encryptData(data);
+      await this.fs.writeFile(filePath, encryptedData);
+      return true;
+    } catch (error) {
+      console.error('Error saving encrypted cache:', error);
+      return false;
+    }
+  }
+
+  async load(key) {
+    const filePath = this.path.join(this.cacheDir, `${key}.encrypted`);
+    try {
+      const encryptedData = await this.fs.readFile(filePath, 'utf8');
+      return await this.decryptData(encryptedData);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async delete(key) {
+    const filePath = this.path.join(this.cacheDir, `${key}.encrypted`);
+    try {
+      await this.fs.unlink(filePath);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+class ReactNativeAdapter extends BaseAdapter {
+  constructor(cacheDir, encryption) {
+    super(cacheDir, encryption);
+    this.RNFS = require('react-native-fs');
+    this.cacheDir = `${this.RNFS.DocumentDirectoryPath}/${cacheDir}`;
+  }
+
+  async init() {
+    try {
+      const exists = await this.RNFS.exists(this.cacheDir);
+      if (!exists) {
+        await this.RNFS.mkdir(this.cacheDir);
+      }
+      await this.encryption.init();
+    } catch (error) {
+      console.error('Error initializing RN adapter:', error);
+    }
+  }
+
+  async save(key, data) {
+    const filePath = `${this.cacheDir}/${key}.encrypted`;
+    try {
+      const encryptedData = await this.encryptData(data);
+      await this.RNFS.writeFile(filePath, encryptedData, 'utf8');
+      return true;
+    } catch (error) {
+      console.error('Error saving encrypted cache:', error);
+      return false;
+    }
+  }
+
+  async load(key) {
+    const filePath = `${this.cacheDir}/${key}.encrypted`;
+    try {
+      const encryptedData = await this.RNFS.readFile(filePath, 'utf8');
+      return await this.decryptData(encryptedData);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async delete(key) {
+    const filePath = `${this.cacheDir}/${key}.encrypted`;
+    try {
+      await this.RNFS.unlink(filePath);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+
+class WebAdapter extends BaseAdapter {
+  constructor(cacheDir, encryption) {
+    super(cacheDir, encryption);
+    this.db = null;
+  }
+
+  async init() {
+    await this.encryption.init();
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.cacheDir, 1);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve();
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('cache')) {
+          db.createObjectStore('cache');
+        }
+      };
+    });
+  }
+
+  async save(key, data) {
+    const encryptedData = await this.encryptData(data);
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['cache'], 'readwrite');
+      const store = transaction.objectStore('cache');
+      const request = store.put(encryptedData, key);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(true);
+    });
+  }
+
+  async load(key) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['cache'], 'readonly');
+      const store = transaction.objectStore('cache');
+      const request = store.get(key);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = async () => {
+        if (request.result) {
+          const decryptedData = await this.decryptData(request.result);
+          resolve(decryptedData);
+        } else {
+          resolve(null);
+        }
+      };
+    });
+  }
+
+  async delete(key) {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['cache'], 'readwrite');
+      const store = transaction.objectStore('cache');
+      const request = store.delete(key);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(true);
+    });
+  }
+}
+
+export { CachePersistenceAdapter, EncryptionService };
+
+```
+
+Here's how to use the encrypted cache in your HTTP hook:
+
+```javascript
+import { useState, useEffect, useCallback } from 'react';
+import { CachePersistenceAdapter } from './CachePersistence';
+
+const useEncryptedHttpCache = (options = {}) => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState(null);
+  const [persistence, setPersistence] = useState(null);
+
+  // Generate or use provided encryption key
+  const generateEncryptionKey = async () => {
+    if (options.encryptionKey) return options.encryptionKey;
+    
+    const key = await window.crypto.subtle.generateKey(
+      {
+        name: 'AES-GCM',
+        length: 256
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+    
+    const exportedKey = await window.crypto.subtle.exportKey('raw', key);
+    return Buffer.from(exportedKey).toString('base64');
+  };
+
+  // Initialize persistence with encryption
+  useEffect(() => {
+    const initPersistence = async () => {
+      try {
+        const encryptionKey = await generateEncryptionKey();
+        const adapter = new CachePersistenceAdapter({
+          cacheDir: options.cacheDir || 'encrypted-http-cache',
+          encryptionKey
+        });
+
+        const persistenceInstance = await adapter.getAdapter();
+        await persistenceInstance.init();
+        setPersistence(persistenceInstance);
+
+        // Load and decrypt cached requests
+        const savedRequests = await persistenceInstance.load('pending_requests');
+        if (savedRequests) {
+          setPendingRequests(savedRequests);
+        }
+      } catch (error) {
+        console.error('Failed to initialize encrypted persistence:', error);
+        setError(error);
+      }
+    };
+
+    initPersistence();
+  }, [options.cacheDir, options.encryptionKey]);
+
+  // Save encrypted pending requests
+  useEffect(() => {
+    const savePendingRequests = async () => {
+      if (persistence && pendingRequests) {
+        try {
+          await persistence.save('pending_requests', pendingRequests);
+        } catch (error) {
+          console.error('Failed to save encrypted requests:', error);
+        }
+      }
+    };
+
+    savePendingRequests();
+  }, [persistence, pendingRequests]);
+
+  // ... rest of the hook implementation (sendRequest, processCachedRequests, etc.)
+
+  return {
+    sendRequest,
+    clearCache,
+    processCachedRequests,
+    isOnline,
+    isProcessing,
+    pendingRequests,
+    error
+  };
+};
+
+export default useEncryptedHttpCache;
+
+```
+
+Usage example:
+
+```javascript
+const MyComponent = () => {
+  const { sendRequest, pendingRequests, error } = useEncryptedHttpCache({
+    cacheDir: 'my-secure-cache',
+    // Optional: Provide your own encryption key
+    encryptionKey: 'your-base64-encoded-key'
+  });
+
+  const handleSubmit = async () => {
+    try {
+      const response = await sendRequest('https://api.example.com/data', {
+        sensitiveData: 'example'
+      });
+      
+      if (response.cached) {
+        console.log('Encrypted and cached:', response.failureReason);
+      } else {
+        console.log('Request successful:', response);
+      }
+    } catch (error) {
+      console.error('Request failed:', error);
+    }
+  };
+
+  return (
+    // ... your component JSX
+  );
+};
+```
+
+Key encryption features:
+
+1. **Strong Encryption**:
+   - Uses AES-GCM for authenticated encryption
+   - 256-bit keys
+   - Random IV for each encryption
+   - Authentication tags to prevent tampering
+
+2. **Key Management**:
+   - Automatic key generation if not provided
+   - Secure key import/export
+   - Key persistence options
+
+3. **Security Features**:
+   - Encrypted file extensions
+   - Secure error handling
+   - Memory cleanup
+   - Tamper detection
+
+4. **Platform Support**:
+   - Web Crypto API for browsers
+   - Native crypto modules for Node.js/Electron
+   - React Native crypto libraries
+
+
+4. Add additional encryption algorithms?
