@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Right-Side Vertical Tabs</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .nav-tabs {
+            border-bottom: none;
+            border-left: 1px solid #dee2e6;
+        }
+        .nav-tabs .nav-link {
+            border-radius: 0;
+            border: 1px solid transparent;
+            margin-left: -1px;
+        }
+        .nav-tabs .nav-link.active {
+            border-color: #dee2e6 #fff #dee2e6 #dee2e6;
+        }
+    </style>
+</head>
+<body class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <div class="d-flex">
+                <!-- Tab content -->
+                <div class="tab-content flex-grow-1 pe-3">
+                    <div class="tab-pane fade show active" id="cui" role="tabpanel" aria-labelledby="cui-tab">
+                        <h4>CUI Content</h4>
+                        <p>This is the CUI tab content. You can add any content here.</p>
+                    </div>
+                    <div class="tab-pane fade" id="view" role="tabpanel" aria-labelledby="view-tab">
+                        <h4>View Content</h4>
+                        <p>This is the View tab content. You can add any content here.</p>
+                    </div>
+                    <div class="tab-pane fade" id="list" role="tabpanel" aria-labelledby="list-tab">
+                        <h4>List Content</h4>
+                        <p>This is the List tab content. You can add any content here.</p>
+                    </div>
+                </div>
+
+                <!-- Vertical tabs on right -->
+                <div class="nav flex-column nav-tabs" role="tablist">
+                    <button class="nav-link active text-start" id="cui-tab" data-bs-toggle="tab" data-bs-target="#cui" type="button" role="tab" aria-controls="cui" aria-selected="true">CUI</button>
+                    <button class="nav-link text-start" id="view-tab" data-bs-toggle="tab" data-bs-target="#view" type="button" role="tab" aria-controls="view" aria-selected="false">View</button>
+                    <button class="nav-link text-start" id="list-tab" data-bs-toggle="tab" data-bs-target="#list" type="button" role="tab" aria-controls="list" aria-selected="false">List</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
