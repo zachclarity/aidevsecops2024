@@ -1,0 +1,53 @@
+// src/pages/Column1.jsx
+import React from 'react';
+
+const Column1 = () => {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold">Column 1 Content</h3>
+      <p className="text-gray-600">This is the detailed content for Column 1. You can add any specific information or components here.</p>
+      <div className="bg-gray-50 p-4 rounded">
+        <h4 className="font-medium mb-2">Featured Item</h4>
+        <p className="text-sm text-gray-500">Special content for Column 1 goes here.</p>
+      </div>
+    </div>
+  );
+};
+
+export default Column1;
+
+// src/pages/Column2.jsx
+import React from 'react';
+
+const Column2 = () => {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold">Column 2 Content</h3>
+      <p className="text-gray-600">This is the detailed content for Column 2. You can add any specific information or components here.</p>
+      <div className="bg-gray-50 p-4 rounded">
+        <h4 className="font-medium mb-2">Featured Item</h4>
+        <p className="text-sm text-gray-500">Special content for Column 2 goes here.</p>
+      </div>
+    </div>
+  );
+};
+
+export default Column2;
+
+// src/pages/Column3.jsx
+import React from 'react';
+
+const Column3 = () => {
+  return (
+    <div className="space-y-4">
+      <h3 className="text-xl font-semibold">Column 3 Content</h3>
+      <p className="text-gray-600">This is the detailed content for Column 3. You can add any specific information or components here.</p>
+      <div className="bg-gray-50 p-4 rounded">
+        <h4 className="font-medium mb-2">Featured Item</h4>
+        <p className="text-sm text-gray-500">Special content for Column 3 goes here.</p>
+      </div>
+    </div>
+  );
+};
+
+export default Column3;
