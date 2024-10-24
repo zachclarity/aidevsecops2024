@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .container {
+            position: relative;
+            display: inline-block;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .burn-btn {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .cut-btn {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .edit-btn {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .clear-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+
+        .overlay {
+            pointer-events: all;
+        }
+
+        .body-base {
+            pointer-events: none;
+        }
+
+        .color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            border: 2px solid #333;
+        }
+
+        .selected-shape {
+            stroke-dasharray: 5,5;
+        }
+
+        .resize-handle {
+            cursor: nw-resize;
+            fill: white;
+            stroke: black;
+        }
+    </style>
+</head>
+<body>
+    <div class="controls">
+        <button class="burn-btn" onclick="setMode('draw', 'burn')">Burn (Blue)</button>
+        <button class="cut-btn" onclick="setMode('draw', 'cut')">Cut (Red)</button>
+        <button class="edit-btn" onclick="setMode('edit')">Edit Mode</button>
+        <button class="clear-btn" onclick="clearOverlays()">Clear All</button>
+        <div>Mode: <span id="current-mode">None</span></div>
+        <div class="color-indicator" id="color-indicator"></div>
+    </div>
+    
+    <div class="container">
+        <svg width="300" height="500" viewBox="0 0 300 500">
+            <!-- Base body outline -->
+            <g class="body-base" fill="#f0f0f0" stroke="black" stroke-width="2">
+                <!-- Head -->
+                <circle cx="150" cy="60" r="40" />
+                
+                <!-- Neck -->
+                <rect x="135" y="100" width="30" height="20" />
+                
+                <!-- Torso -->
+                <path d="M110,120 L190,120 L200,300 L100,300 Z" />
+                
+                <!-- Arms -->
+                <path d="M190,120 L240,200 L230,210 L180,140 Z" /> <!-- Right arm -->
+                <path d="M110,120 L60,200 L70,210 L120,140 Z" /> <!-- Left arm -->
+                
+                <!-- Legs -->
+                <path d="M100,300 L80,450 L120,450 L140,300 Z" /> <!-- Left leg -->
+                <path d="M200,300 L220,450 L180,450 L160,300 Z" /> <!-- Right leg -->
+                
+                <!-- Labels -->
+                <g fill="black" font-size="12" text-anchor="middle">
+                    <text x="150" y="65">Head</text>
+                    <text x="150" y="200">Torso</text>
+                    <text x="220" y="180">Arm</text>
+                    <text x="80" y="180">Arm</text>
+                    <text x="100" y="400">Leg</text>
+                    <text x="200" y="400">Leg</text>
+                </g>
+            </g>
+            
+            <!-- Overlay group for ellipses -->
+            <g class="overlay"></g>
+        </svg>
+    </div>
+
+    <script>
+        const svg = document.querySelector('svg');
+        const overlay = document.querySelector('.overlay');
+        const currentModeDisplay = document.getElementById('current-mode');
+        const colorIndicator = document.getElementById('color-indicator');
+        
+        let currentMode = null;
+        let currentType = null;
+        let isDrawing = false;
+        let isDragging = false;
+        let isResizing = false;
+        let currentShape = null;
+        let selectedShape = null;
+        let startX, startY;
+        let offsetX, offsetY;
+
+        const types = {
+            burn: {
+                color: '#007bff',
+                label: 'Burn',
+                opacity: 0.2
+            },
+            cut: {
+                color: '#dc3545',
+                label: 'Cut',
+                opacity: 0.2
+            }
+        };
+
+        function setMode(mode, type = null) {
+            currentMode = mode;
+            currentType = type;
+            currentModeDisplay.textContent = `${mode.charAt(0).toUpperCase() + mode.slice(1)}${type ? ` - ${type}` : ''}`;
+            colorIndicator.style.backgroundColor = type ? types[type].color : 'transparent';
+            
+            // Clear selection when changing modes
+            if (selectedShape) {
+                deselectShape();
+            }
+        }
+
+        function clearOverlays() {
+            while (overlay.firstChild) {
+                overlay.removeChild(overlay.firstChild);
+            }
+            deselectShape();
+        }
+
+        function createShapeGroup(type) {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+            group.setAttribute('data-type', type);
+            
+            const ellipse = document.createElementNS("http://www.w3.org/2000/svg", 'ellipse');
+            const text = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+            
+            ellipse.setAttribute('fill', types[type].color);
+            ellipse.setAttribute('fill-opacity', types[type].opacity);
+            ellipse.setAttribute('stroke', types[type].color);
+            ellipse.setAttribute('stroke-width', '2');
+            
+            text.setAttribute('fill', types[type].color);
+            text.setAttribute('font-size', '14');
+            text.setAttribute('font-weight', 'bold');
+            text.textContent = types[type].label;
+            
+            group.appendChild(ellipse);
+            group.appendChild(text);
+            
+            return group;
+        }
+
+        function addResizeHandles(group) {
+            const ellipse = group.querySelector('ellipse');
+            const handles = document.createElementNS("http://www.w3.org/2000/svg", 'g');
+            handles.classList.add('resize-handles');
+            
+            const positions = ['nw', 'ne', 'se', 'sw'];
+            positions.forEach(pos => {
+                const handle = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
+                handle.setAttribute('r', '5');
+                handle.classList.add('resize-handle');
+                handle.setAttribute('data-position', pos);
+                handles.appendChild(handle);
+            });
+            
+            group.appendChild(handles);
+            updateResizeHandles(group);
+        }
+
+        function updateResizeHandles(group) {
+            if (!group) return;
+            
+            const ellipse = group.querySelector('ellipse');
+            const handles = group.querySelectorAll('.resize-handle');
+            
+            const cx = parseFloat(ellipse.getAttribute('cx'));
+            const cy = parseFloat(ellipse.getAttribute('cy'));
+            const rx = parseFloat(ellipse.getAttribute('rx'));
+            const ry = parseFloat(ellipse.getAttribute('ry'));
+            
+            handles.forEach(handle => {
+                const pos = handle.getAttribute('data-position');
+                let x = cx, y = cy;
+                
+                switch(pos) {
+                    case 'nw': x -= rx; y -= ry; break;
+                    case 'ne': x += rx; y -= ry; break;
+                    case 'se': x += rx; y += ry; break;
+                    case 'sw': x -= rx; y += ry; break;
+                }
+                
+                handle.setAttribute('cx', x);
+                handle.setAttribute('cy', y);
+            });
+        }
+
+        function selectShape(group) {
+            deselectShape();
+            selectedShape = group;
+            const ellipse = group.querySelector('ellipse');
+            ellipse.classList.add('selected-shape');
+            addResizeHandles(group);
+        }
+
+        function deselectShape() {
+            if (selectedShape) {
+                const ellipse = selectedShape.querySelector('ellipse');
+                ellipse.classList.remove('selected-shape');
+                const handles = selectedShape.querySelector('.resize-handles');
+                if (handles) {
+                    handles.remove();
+                }
+                selectedShape = null;
+            }
+        }
+
+        function updateShape(group, cx, cy, rx, ry) {
+            const ellipse = group.querySelector('ellipse');
+            const text = group.querySelector('text');
+            
+            ellipse.setAttribute('cx', cx);
+            ellipse.setAttribute('cy', cy);
+            ellipse.setAttribute('rx', rx);
+            ellipse.setAttribute('ry', ry);
+            
+            text.setAttribute('x', cx);
+            text.setAttribute('y', cy - ry - 5);
+            text.setAttribute('text-anchor', 'middle');
+            
+            updateResizeHandles(group);
+        }
+
+        svg.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('resize-handle')) {
+                isResizing = true;
+                currentShape = selectedShape;
+                const handle = e.target;
+                const ellipse = currentShape.querySelector('ellipse');
+                startX = parseFloat(handle.getAttribute('cx'));
+                startY = parseFloat(handle.getAttribute('cy'));
+                const cx = parseFloat(ellipse.getAttribute('cx'));
+                const cy = parseFloat(ellipse.getAttribute('cy'));
+                offsetX = startX - cx;
+                offsetY = startY - cy;
+                return;
+            }
+            
+            const rect = svg.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            if (currentMode === 'draw') {
+                isDrawing = true;
+                currentShape = createShapeGroup(currentType);
+                overlay.appendChild(currentShape);
+            } else if (currentMode === 'edit') {
+                let target = e.target;
+                while (target && !target.parentNode.classList.contains('overlay')) {
+                    target = target.parentNode;
+                }
+                
+                if (target && target.parentNode.classList.contains('overlay')) {
+                    isDragging = true;
+                    currentShape = target;
+                    selectShape(currentShape);
+                    const ellipse = currentShape.querySelector('ellipse');
+                    offsetX = startX - parseFloat(ellipse.getAttribute('cx'));
+                    offsetY = startY - parseFloat(ellipse.getAttribute('cy'));
+                } else {
+                    deselectShape();
+                }
+            }
+        });
+
+        svg.addEventListener('mousemove', (e) => {
+            if (!isDrawing && !isDragging && !isResizing) return;
+            
+            const rect = svg.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            if (isDrawing) {
+                const cx = (startX + currentX) / 2;
+                const cy = (startY + currentY) / 2;
+                const rx = Math.abs(currentX - startX) / 2;
+                const ry = Math.abs(currentY - startY) / 2;
+                updateShape(currentShape, cx, cy, rx, ry);
+            } else if (isDragging) {
+                const ellipse = currentShape.querySelector('ellipse');
+                const cx = currentX - offsetX;
+                const cy = currentY - offsetY;
+                const rx = parseFloat(ellipse.getAttribute('rx'));
+                const ry = parseFloat(ellipse.getAttribute('ry'));
+                updateShape(currentShape, cx, cy, rx, ry);
+            } else if (isResizing) {
+                const ellipse = currentShape.querySelector('ellipse');
+                const cx = parseFloat(ellipse.getAttribute('cx'));
+                const cy = parseFloat(ellipse.getAttribute('cy'));
+                const newX = currentX;
+                const newY = currentY;
+                const rx = Math.abs(newX - cx);
+                const ry = Math.abs(newY - cy);
+                updateShape(currentShape, cx, cy, rx, ry);
+            }
+        });
+
+        svg.addEventListener('mouseup', () => {
+            isDrawing = false;
+            isDragging = false;
+            isResizing = false;
+            currentShape = null;
+        });
+
+        // Initialize with no mode selected
+        currentModeDisplay.textContent = 'None';
+        colorIndicator.style.backgroundColor = 'transparent';
+
+        // Add keyboard delete listener for selected shapes
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' && selectedShape) {
+                selectedShape.remove();
+                selectedShape = null;
+            }
+        });
+    </script>
+</body>
+</html>
