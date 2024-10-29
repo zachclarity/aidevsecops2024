@@ -522,3 +522,406 @@ Benefits Over Basic Authentication:
 - Testing environments
 - Analytics and monitoring
 - Simplified compliance
+
+
+I'll provide a more detailed implementation of Rownd, showing its key features and integration patterns.
+
+
+
+```typescript
+// src/auth/rownd/types.ts
+export interface RowndConfig {
+  appKey: string;
+  apiUrl?: string;
+  baseUrl?: string;
+  defaultRedirectUri?: string;
+  customizations?: {
+    signInTriggerText?: string;
+    hubLoadingText?: string;
+    autoTheme?: boolean;
+    darkMode?: boolean;
+  };
+}
+
+export interface RowndUser {
+  id: string;
+  data: {
+    email?: string;
+    phone?: string;
+    first_name?: string;
+    last_name?: string;
+    [key: string]: any; // Custom fields
+  };
+  auth: {
+    access_token: string;
+    refresh_token: string;
+  };
+}
+
+// src/auth/rownd/RowndProvider.tsx
+import React from 'react';
+import { RowndProvider as BaseRowndProvider, useRownd } from '@rownd/react';
+
+const rowndConfig: RowndConfig = {
+  appKey: import.meta.env.VITE_ROWND_APP_KEY,
+  customizations: {
+    signInTriggerText: 'Sign in / Register',
+    autoTheme: true,
+  },
+};
+
+export const RowndProvider: React.FC<{ children: React.ReactNode }> = ({ 
+  children 
+}) => {
+  return (
+    <BaseRowndProvider config={rowndConfig}>
+      {children}
+    </BaseRowndProvider>
+  );
+};
+
+// src/auth/rownd/hooks/useRowndAuth.ts
+import { useRownd } from '@rownd/react';
+import { useCallback, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export const useRowndAuth = () => {
+  const { 
+    is_authenticated, 
+    user, 
+    requestSignIn, 
+    signOut, 
+    getAccessToken,
+    setUserData 
+  } = useRownd();
+  const navigate = useNavigate();
+
+  // Handle authentication state changes
+  useEffect(() => {
+    if (!is_authenticated) {
+      navigate('/login');
+    }
+  }, [is_authenticated, navigate]);
+
+  // Enhanced sign-in with options
+  const signIn = useCallback((options?: {
+    post_login_redirect?: string;
+    authentication_methods?: Array<'email' | 'phone' | 'google' | 'apple'>;
+  }) => {
+    requestSignIn({
+      post_login_redirect: options?.post_login_redirect || '/dashboard',
+      auto_sign_in: true,
+      authentication_methods: options?.authentication_methods,
+    });
+  }, [requestSignIn]);
+
+  // Update user profile
+  const updateProfile = useCallback(async (data: Partial<RowndUser['data']>) => {
+    try {
+      await setUserData(data);
+      return true;
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      return false;
+    }
+  }, [setUserData]);
+
+  // Get fresh access token
+  const getFreshAccessToken = useCallback(async () => {
+    try {
+      const token = await getAccessToken();
+      return token;
+    } catch (error) {
+      console.error('Failed to get access token:', error);
+      return null;
+    }
+  }, [getAccessToken]);
+
+  return {
+    isAuthenticated: is_authenticated,
+    user,
+    signIn,
+    signOut,
+    updateProfile,
+    getFreshAccessToken,
+  };
+};
+
+// src/components/auth/RowndSignIn.tsx
+import React from 'react';
+import { Card, Button, Container } from 'react-bootstrap';
+import { useRowndAuth } from '../auth/rownd/hooks/useRowndAuth';
+
+export const RowndSignIn: React.FC = () => {
+  const { signIn } = useRowndAuth();
+
+  const handleEmailSignIn = () => {
+    signIn({ authentication_methods: ['email'] });
+  };
+
+  const handleSocialSignIn = (provider: 'google' | 'apple') => {
+    signIn({ authentication_methods: [provider] });
+  };
+
+  return (
+    <Container className="d-flex justify-content-center align-items-center min-vh-100">
+      <Card style={{ width: '400px' }}>
+        <Card.Body>
+          <Card.Title className="text-center mb-4">Welcome</Card.Title>
+          <div className="d-grid gap-3">
+            <Button 
+              variant="primary" 
+              onClick={handleEmailSignIn}
+              size="lg"
+            >
+              Continue with Email
+            </Button>
+            <Button 
+              variant="outline-dark" 
+              onClick={() => handleSocialSignIn('google')}
+              size="lg"
+            >
+              Continue with Google
+            </Button>
+            <Button 
+              variant="dark" 
+              onClick={() => handleSocialSignIn('apple')}
+              size="lg"
+            >
+              Continue with Apple
+            </Button>
+          </div>
+        </Card.Body>
+      </Card>
+    </Container>
+  );
+};
+
+// src/components/profile/UserProfile.tsx
+import React, { useState } from 'react';
+import { Card, Form, Button, Alert, Container } from 'react-bootstrap';
+import { useRowndAuth } from '../../auth/rownd/hooks/useRowndAuth';
+
+export const UserProfile: React.FC = () => {
+  const { user, updateProfile } = useRowndAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: user.data.first_name || '',
+    last_name: user.data.last_name || '',
+    email: user.data.email || '',
+    phone: user.data.phone || '',
+  });
+  const [message, setMessage] = useState<{ type: 'success' | 'danger'; text: string } | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const success = await updateProfile(formData);
+    
+    setMessage({
+      type: success ? 'success' : 'danger',
+      text: success ? 'Profile updated successfully' : 'Failed to update profile'
+    });
+    
+    if (success) {
+      setIsEditing(false);
+    }
+  };
+
+  return (
+    <Container className="py-4">
+      <Card>
+        <Card.Body>
+          <Card.Title className="mb-4">User Profile</Card.Title>
+          
+          {message && (
+            <Alert variant={message.type} dismissible onClose={() => setMessage(null)}>
+              {message.text}
+            </Alert>
+          )}
+
+          <Form onSubmit={handleSubmit}>
+            <Form.Group className="mb-3">
+              <Form.Label>First Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.first_name}
+                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                disabled={!isEditing}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Last Name</Form.Label>
+              <Form.Control
+                type="text"
+                value={formData.last_name}
+                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                disabled={!isEditing}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                disabled={!isEditing}
+              />
+            </Form.Group>
+
+            <Form.Group className="mb-3">
+              <Form.Label>Phone</Form.Label>
+              <Form.Control
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                disabled={!isEditing}
+              />
+            </Form.Group>
+
+            <div className="d-flex gap-2">
+              {!isEditing ? (
+                <Button variant="primary" onClick={() => setIsEditing(true)}>
+                  Edit Profile
+                </Button>
+              ) : (
+                <>
+                  <Button variant="primary" type="submit">
+                    Save Changes
+                  </Button>
+                  <Button variant="secondary" onClick={() => setIsEditing(false)}>
+                    Cancel
+                  </Button>
+                </>
+              )}
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
+    </Container>
+  );
+};
+
+// src/services/api/apiClient.ts
+import { useRowndAuth } from '../auth/rownd/hooks/useRowndAuth';
+
+export const createApiClient = () => {
+  const { getFreshAccessToken } = useRowndAuth();
+
+  const apiClient = {
+    get: async (url: string) => {
+      const token = await getFreshAccessToken();
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.json();
+    },
+    
+    post: async (url: string, data: any) => {
+      const token = await getFreshAccessToken();
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return response.json();
+    },
+  };
+
+  return apiClient;
+};
+
+```
+
+Key Features of Rownd Implementation:
+
+1. Authentication Methods:
+```typescript
+// Multiple sign-in options
+const signInMethods = {
+  email: () => signIn({ authentication_methods: ['email'] }),
+  phone: () => signIn({ authentication_methods: ['phone'] }),
+  google: () => signIn({ authentication_methods: ['google'] }),
+  apple: () => signIn({ authentication_methods: ['apple'] }),
+  passwordless: () => signIn({ auto_sign_in: true })
+};
+```
+
+2. User Data Management:
+```typescript
+// Custom fields and progressive profiling
+const updateUserProfile = async () => {
+  await setUserData({
+    custom_field: 'value',
+    preferences: { marketing: true },
+    profile_completion: 75
+  });
+};
+```
+
+3. Token Management:
+```typescript
+// Automatic token refresh and management
+const authenticatedRequest = async () => {
+  const token = await getAccessToken(); // Auto-refreshes if needed
+  // Use token for API requests
+};
+```
+
+Unique Rownd Features:
+
+1. Progressive Profiling:
+- Collect user data gradually
+- Customizable data fields
+- Data validation rules
+
+2. Authentication:
+- Passwordless options
+- Multi-factor authentication
+- Social login integration
+- Custom auth flows
+
+3. User Management:
+- Custom user fields
+- Data encryption
+- GDPR compliance tools
+- User verification
+
+4. Security:
+- JWTs with auto-refresh
+- Encryption at rest
+- Rate limiting
+- Fraud prevention
+
+API Integration Examples:
+
+1. Protected Endpoints:
+```typescript
+// src/services/api/endpoints.ts
+const api = createApiClient();
+
+export const userService = {
+  getProfile: () => api.get('/api/user/profile'),
+  updateProfile: (data) => api.post('/api/user/profile', data),
+  getPreferences: () => api.get('/api/user/preferences')
+};
+```
+
+2. Error Handling:
+```typescript
+const handleApiError = (error: any) => {
+  if (error.status === 401) {
+    // Token expired or invalid
+    signOut();
+    navigate('/login');
+  }
+  // Handle other errors
+};
+```
