@@ -925,3 +925,432 @@ const handleApiError = (error: any) => {
   // Handle other errors
 };
 ```
+
+
+
+I'll create an implementation that supports offline access using Rownd authentication combined with local storage and synchronization capabilities.
+
+
+
+```typescript
+// src/services/storage/types.ts
+interface SyncStatus {
+  lastSynced: number;
+  pendingChanges: boolean;
+  syncError?: string;
+}
+
+interface OfflineData<T> {
+  data: T;
+  lastModified: number;
+  syncStatus: 'synced' | 'pending' | 'conflict';
+  serverId?: string;
+}
+
+// src/services/storage/IndexedDBService.ts
+export class IndexedDBService {
+  private db: IDBDatabase | null = null;
+  private dbName = 'offlineAppDB';
+  private version = 1;
+
+  async init() {
+    return new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open(this.dbName, this.version);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve();
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        // Create stores for different data types
+        if (!db.objectStoreNames.contains('userData')) {
+          const userStore = db.createObjectStore('userData', { keyPath: 'id' });
+          userStore.createIndex('syncStatus', 'syncStatus');
+        }
+        
+        if (!db.objectStoreNames.contains('offlineActions')) {
+          db.createObjectStore('offlineActions', { 
+            keyPath: 'id', 
+            autoIncrement: true 
+          });
+        }
+      };
+    });
+  }
+
+  async saveData<T>(
+    storeName: string, 
+    data: T, 
+    id: string
+  ): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const offlineData: OfflineData<T> = {
+      data,
+      lastModified: Date.now(),
+      syncStatus: 'pending',
+      serverId: id
+    };
+
+    const transaction = this.db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+
+    return new Promise((resolve, reject) => {
+      const request = store.put(offlineData);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
+    });
+  }
+
+  async getData<T>(
+    storeName: string, 
+    id: string
+  ): Promise<OfflineData<T> | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(storeName, 'readonly');
+    const store = transaction.objectStore(storeName);
+
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result || null);
+    });
+  }
+}
+
+// src/services/sync/SyncService.ts
+import { useRowndAuth } from '../../auth/rownd/hooks/useRowndAuth';
+
+export class SyncService {
+  private indexedDB: IndexedDBService;
+  private syncInProgress = false;
+  private readonly syncInterval = 5 * 60 * 1000; // 5 minutes
+
+  constructor(private auth: ReturnType<typeof useRowndAuth>) {
+    this.indexedDB = new IndexedDBService();
+    this.init();
+  }
+
+  private async init() {
+    await this.indexedDB.init();
+    this.startPeriodicSync();
+  }
+
+  private startPeriodicSync() {
+    setInterval(() => {
+      if (navigator.onLine) {
+        this.syncData();
+      }
+    }, this.syncInterval);
+
+    window.addEventListener('online', () => {
+      this.syncData();
+    });
+  }
+
+  async syncData() {
+    if (this.syncInProgress) return;
+    this.syncInProgress = true;
+
+    try {
+      const token = await this.auth.getFreshAccessToken();
+      if (!token) {
+        console.warn('No valid token for sync');
+        return;
+      }
+
+      // Sync user data
+      const userData = await this.indexedDB.getData<any>('userData', 'currentUser');
+      if (userData?.syncStatus === 'pending') {
+        await this.syncUserData(userData.data, token);
+      }
+
+      // Sync offline actions
+      await this.syncOfflineActions(token);
+
+      this.syncInProgress = false;
+    } catch (error) {
+      console.error('Sync failed:', error);
+      this.syncInProgress = false;
+    }
+  }
+
+  private async syncUserData(userData: any, token: string) {
+    try {
+      const response = await fetch('/api/user/sync', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      });
+
+      if (response.ok) {
+        await this.indexedDB.saveData('userData', userData, 'currentUser');
+      }
+    } catch (error) {
+      console.error('Failed to sync user data:', error);
+    }
+  }
+
+  private async syncOfflineActions(token: string) {
+    // Implement offline action sync logic
+  }
+}
+
+// src/hooks/useOfflineAuth.ts
+import { useState, useEffect } from 'react';
+import { useRowndAuth } from '../auth/rownd/hooks/useRowndAuth';
+
+export const useOfflineAuth = () => {
+  const rowndAuth = useRowndAuth();
+  const [offlineCapable, setOfflineCapable] = useState(false);
+  const [syncService, setSyncService] = useState<SyncService | null>(null);
+  const [indexedDB] = useState(() => new IndexedDBService());
+
+  useEffect(() => {
+    const initOfflineSupport = async () => {
+      await indexedDB.init();
+      const sync = new SyncService(rowndAuth);
+      setSyncService(sync);
+      setOfflineCapable(true);
+    };
+
+    initOfflineSupport();
+  }, []);
+
+  const login = async (credentials: any) => {
+    try {
+      // Try online login first
+      if (navigator.onLine) {
+        await rowndAuth.signIn();
+        await cacheUserData();
+      } else {
+        // Check offline credentials
+        const cached = await indexedDB.getData('userData', 'currentUser');
+        if (!cached) {
+          throw new Error('No offline data available');
+        }
+      }
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
+  };
+
+  const cacheUserData = async () => {
+    if (rowndAuth.user) {
+      await indexedDB.saveData(
+        'userData',
+        rowndAuth.user,
+        'currentUser'
+      );
+    }
+  };
+
+  return {
+    ...rowndAuth,
+    login,
+    offlineCapable,
+    syncService,
+  };
+};
+
+// src/components/OfflineAwareApp.tsx
+import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-bootstrap';
+import { useOfflineAuth } from '../hooks/useOfflineAuth';
+
+export const OfflineAwareApp: React.FC = () => {
+  const { offlineCapable, user, syncService } = useOfflineAuth();
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>({
+    lastSynced: 0,
+    pendingChanges: false
+  });
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isOnline && syncService) {
+      syncService.syncData().then(() => {
+        setSyncStatus({
+          lastSynced: Date.now(),
+          pendingChanges: false
+        });
+      });
+    }
+  }, [isOnline, syncService]);
+
+  return (
+    <div>
+      {!isOnline && (
+        <Alert variant="warning">
+          You are currently offline. Changes will be synchronized when you reconnect.
+        </Alert>
+      )}
+      
+      {syncStatus.pendingChanges && (
+        <Alert variant="info">
+          You have pending changes that will sync when you're back online.
+        </Alert>
+      )}
+
+      {/* Your app content */}
+    </div>
+  );
+};
+
+// src/services/api/offlineApiClient.ts
+export const createOfflineApiClient = (indexedDB: IndexedDBService) => {
+  const queueOfflineAction = async (action: {
+    type: string;
+    payload: any;
+    timestamp: number;
+  }) => {
+    await indexedDB.saveData('offlineActions', action, action.timestamp.toString());
+  };
+
+  return {
+    get: async (url: string) => {
+      try {
+        if (!navigator.onLine) {
+          // Try to get from cache
+          const cachedData = await indexedDB.getData('apiCache', url);
+          if (cachedData) {
+            return cachedData;
+          }
+          throw new Error('No cached data available');
+        }
+
+        // Online request
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        // Cache the response
+        await indexedDB.saveData('apiCache', data, url);
+        
+        return data;
+      } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+      }
+    },
+
+    post: async (url: string, data: any) => {
+      try {
+        if (!navigator.onLine) {
+          // Queue action for later
+          await queueOfflineAction({
+            type: 'POST',
+            payload: { url, data },
+            timestamp: Date.now()
+          });
+          return { queued: true };
+        }
+
+        // Online request
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        
+        return response.json();
+      } catch (error) {
+        console.error('API request failed:', error);
+        throw error;
+      }
+    }
+  };
+};
+
+```
+
+Key Features of the Offline Implementation:
+
+1. Data Storage:
+```typescript
+// Example of storing critical user data
+const cacheUserData = async (user: RowndUser) => {
+  await indexedDB.saveData('userData', {
+    profile: user.data,
+    token: user.auth.access_token,
+    timestamp: Date.now()
+  }, 'currentUser');
+};
+```
+
+2. Sync Management:
+```typescript
+// Example of handling sync conflicts
+const resolveConflict = async (localData: any, serverData: any) => {
+  if (localData.lastModified > serverData.lastModified) {
+    return localData;
+  }
+  return serverData;
+};
+```
+
+3. Offline Detection:
+```typescript
+// Network status monitoring
+const useNetworkStatus = () => {
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  useEffect(() => {
+    const updateOnlineStatus = () => setIsOnline(navigator.onLine);
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
+  
+  return isOnline;
+};
+```
+
+Important Considerations:
+
+1. Security:
+- Encrypt sensitive data in IndexedDB
+- Clear offline data on logout
+- Validate offline actions before sync
+- Token expiration handling
+
+2. Data Management:
+- Prioritize critical data for offline storage
+- Handle storage limits
+- Implement data cleanup strategies
+- Version control for offline data
+
+3. User Experience:
+- Clear offline indicators
+- Progress tracking for sync
+- Error handling and retry mechanisms
+- Conflict resolution UI
+
+4. Performance:
+- Efficient data indexing
+- Batch synchronization
+- Background sync when possible
+- Compression for large datasets
