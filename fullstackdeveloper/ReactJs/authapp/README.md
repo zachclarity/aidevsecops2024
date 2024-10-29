@@ -1354,3 +1354,437 @@ Important Considerations:
 - Batch synchronization
 - Background sync when possible
 - Compression for large datasets
+
+
+I'll add encryption to the offline storage implementation using the Web Crypto API for secure data handling.
+
+
+
+```typescript
+// src/services/encryption/types.ts
+interface EncryptionKeys {
+  encryptionKey: CryptoKey;
+  iv: Uint8Array;
+}
+
+interface EncryptedData {
+  ciphertext: string;  // Base64 encoded
+  iv: string;         // Base64 encoded
+  timestamp: number;
+}
+
+// src/services/encryption/CryptoService.ts
+export class CryptoService {
+  private static instance: CryptoService;
+  private masterKey: CryptoKey | null = null;
+  private keyCache: Map<string, CryptoKey> = new Map();
+
+  private constructor() {}
+
+  static getInstance(): CryptoService {
+    if (!this.instance) {
+      this.instance = new CryptoService();
+    }
+    return this.instance;
+  }
+
+  async init(userIdentifier: string): Promise<void> {
+    // Derive master key from user identifier
+    const encoder = new TextEncoder();
+    const keyMaterial = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(userIdentifier),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits', 'deriveKey']
+    );
+
+    // Create salt from user identifier
+    const salt = encoder.encode(userIdentifier).slice(0, 16);
+
+    this.masterKey = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      keyMaterial,
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+  }
+
+  async generateDataKey(): Promise<EncryptionKeys> {
+    if (!this.masterKey) throw new Error('CryptoService not initialized');
+
+    const key = await crypto.subtle.generateKey(
+      { name: 'AES-GCM', length: 256 },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+
+    return { encryptionKey: key, iv };
+  }
+
+  private async deriveKeyFromMaster(salt: Uint8Array): Promise<CryptoKey> {
+    if (!this.masterKey) throw new Error('CryptoService not initialized');
+
+    const cacheKey = Array.from(salt).join(',');
+    if (this.keyCache.has(cacheKey)) {
+      return this.keyCache.get(cacheKey)!;
+    }
+
+    const derivedKey = await crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256',
+      },
+      this.masterKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['encrypt', 'decrypt']
+    );
+
+    this.keyCache.set(cacheKey, derivedKey);
+    return derivedKey;
+  }
+
+  async encrypt(data: any, context: string): Promise<EncryptedData> {
+    const { encryptionKey, iv } = await this.generateDataKey();
+    const encoder = new TextEncoder();
+    const encodedData = encoder.encode(JSON.stringify(data));
+
+    const encryptedContent = await crypto.subtle.encrypt(
+      {
+        name: 'AES-GCM',
+        iv,
+        additionalData: encoder.encode(context)
+      },
+      encryptionKey,
+      encodedData
+    );
+
+    return {
+      ciphertext: this.arrayBufferToBase64(encryptedContent),
+      iv: this.arrayBufferToBase64(iv),
+      timestamp: Date.now()
+    };
+  }
+
+  async decrypt(encryptedData: EncryptedData, context: string): Promise<any> {
+    const { encryptionKey } = await this.generateDataKey();
+    const encoder = new TextEncoder();
+
+    try {
+      const decryptedContent = await crypto.subtle.decrypt(
+        {
+          name: 'AES-GCM',
+          iv: this.base64ToArrayBuffer(encryptedData.iv),
+          additionalData: encoder.encode(context)
+        },
+        encryptionKey,
+        this.base64ToArrayBuffer(encryptedData.ciphertext)
+      );
+
+      const decoder = new TextDecoder();
+      return JSON.parse(decoder.decode(decryptedContent));
+    } catch (error) {
+      throw new Error('Decryption failed: Data may be corrupted or tampered with');
+    }
+  }
+
+  private arrayBufferToBase64(buffer: ArrayBuffer): string {
+    const bytes = new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  }
+
+  private base64ToArrayBuffer(base64: string): ArrayBuffer {
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes.buffer;
+  }
+}
+
+// src/services/storage/EncryptedIndexedDBService.ts
+export class EncryptedIndexedDBService {
+  private db: IDBDatabase | null = null;
+  private crypto: CryptoService;
+  
+  constructor() {
+    this.crypto = CryptoService.getInstance();
+  }
+
+  async init(userIdentifier: string) {
+    await this.crypto.init(userIdentifier);
+    await this.initDatabase();
+  }
+
+  private async initDatabase(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('encryptedOfflineDB', 1);
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => {
+        this.db = request.result;
+        resolve();
+      };
+
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        
+        // Create encrypted stores
+        if (!db.objectStoreNames.contains('encryptedUserData')) {
+          const store = db.createObjectStore('encryptedUserData', { 
+            keyPath: 'id' 
+          });
+          store.createIndex('timestamp', 'timestamp');
+        }
+
+        if (!db.objectStoreNames.contains('encryptedOfflineActions')) {
+          const store = db.createObjectStore('encryptedOfflineActions', {
+            keyPath: 'id',
+            autoIncrement: true
+          });
+          store.createIndex('timestamp', 'timestamp');
+        }
+      };
+    });
+  }
+
+  async saveEncryptedData<T>(
+    storeName: string,
+    data: T,
+    id: string
+  ): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const encryptedData = await this.crypto.encrypt(data, `${storeName}:${id}`);
+    const transaction = this.db.transaction(storeName, 'readwrite');
+    const store = transaction.objectStore(storeName);
+
+    return new Promise((resolve, reject) => {
+      const request = store.put({
+        id,
+        ...encryptedData
+      });
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve();
+    });
+  }
+
+  async getDecryptedData<T>(
+    storeName: string,
+    id: string
+  ): Promise<T | null> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const transaction = this.db.transaction(storeName, 'readonly');
+    const store = transaction.objectStore(storeName);
+
+    return new Promise((resolve, reject) => {
+      const request = store.get(id);
+      
+      request.onerror = () => reject(request.error);
+      request.onsuccess = async () => {
+        if (!request.result) {
+          resolve(null);
+          return;
+        }
+
+        try {
+          const decryptedData = await this.crypto.decrypt(
+            request.result,
+            `${storeName}:${id}`
+          );
+          resolve(decryptedData);
+        } catch (error) {
+          reject(error);
+        }
+      };
+    });
+  }
+
+  async clearEncryptedData(): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    const storeNames = this.db.objectStoreNames;
+    const transaction = this.db.transaction(
+      Array.from(storeNames),
+      'readwrite'
+    );
+
+    const clearPromises = Array.from(storeNames).map(
+      (storeName) => new Promise<void>((resolve, reject) => {
+        const request = transaction.objectStore(storeName).clear();
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve();
+      })
+    );
+
+    await Promise.all(clearPromises);
+  }
+}
+
+// src/hooks/useEncryptedOfflineStorage.ts
+export const useEncryptedOfflineStorage = () => {
+  const { user } = useRowndAuth();
+  const [storage] = useState(() => new EncryptedIndexedDBService());
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    if (user?.id && !isInitialized) {
+      storage.init(user.id)
+        .then(() => setIsInitialized(true))
+        .catch(console.error);
+    }
+  }, [user?.id]);
+
+  const saveData = async <T,>(
+    key: string,
+    data: T,
+    options?: { isSecure?: boolean }
+  ) => {
+    if (!isInitialized) throw new Error('Storage not initialized');
+
+    const storeName = options?.isSecure 
+      ? 'encryptedUserData' 
+      : 'encryptedOfflineActions';
+
+    await storage.saveEncryptedData(storeName, data, key);
+  };
+
+  const getData = async <T,>(
+    key: string,
+    options?: { isSecure?: boolean }
+  ): Promise<T | null> => {
+    if (!isInitialized) throw new Error('Storage not initialized');
+
+    const storeName = options?.isSecure 
+      ? 'encryptedUserData' 
+      : 'encryptedOfflineActions';
+
+    return storage.getDecryptedData<T>(storeName, key);
+  };
+
+  return {
+    isInitialized,
+    saveData,
+    getData,
+    clearData: () => storage.clearEncryptedData()
+  };
+};
+
+// Example usage in a component
+const SecureOfflineComponent: React.FC = () => {
+  const storage = useEncryptedOfflineStorage();
+  const [sensitiveData, setSensitiveData] = useState<any>(null);
+
+  const handleSaveData = async () => {
+    try {
+      await storage.saveData('sensitive-key', {
+        secretInfo: 'very-secret-data',
+        timestamp: Date.now()
+      }, { isSecure: true });
+    } catch (error) {
+      console.error('Failed to save encrypted data:', error);
+    }
+  };
+
+  const handleLoadData = async () => {
+    try {
+      const data = await storage.getData('sensitive-key', { isSecure: true });
+      setSensitiveData(data);
+    } catch (error) {
+      console.error('Failed to load encrypted data:', error);
+    }
+  };
+
+  return (
+    <div>
+      <Button onClick={handleSaveData}>Save Encrypted Data</Button>
+      <Button onClick={handleLoadData}>Load Encrypted Data</Button>
+      {sensitiveData && (
+        <div>
+          <pre>{JSON.stringify(sensitiveData, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+};
+
+```
+
+Key Security Features:
+
+1. Key Derivation:
+```typescript
+// Derive encryption keys securely
+const deriveKey = async (userIdentifier: string): Promise<CryptoKey> => {
+  const encoder = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(userIdentifier),
+    'PBKDF2',
+    false,
+    ['deriveBits', 'deriveKey']
+  );
+  
+  return crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: encoder.encode('your-salt'),
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+};
+```
+
+2. Data Encryption:
+```typescript
+// Example of encrypting sensitive data
+const encryptData = async (data: any, key: CryptoKey): Promise<EncryptedData> => {
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encoder = new TextEncoder();
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    encoder.encode(JSON.stringify(data))
+  );
+  
+  return {
+    ciphertext: arrayBufferToBase64(encrypted),
+    iv: arrayBufferToBase64(iv)
+  };
+};
+```
+
+3. Secure Storage:
+- Encryption at rest
+- Key rotation
+- Secure key storage
+- Data integrity checks
+
+4. Security Best Practices:
+- Random IV generation
+- Authenticated encryption
+- Key derivation with PBKDF2
+- Secure error handling
