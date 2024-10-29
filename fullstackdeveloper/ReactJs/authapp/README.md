@@ -1788,3 +1788,104 @@ const encryptData = async (data: any, key: CryptoKey): Promise<EncryptedData> =>
 - Authenticated encryption
 - Key derivation with PBKDF2
 - Secure error handling
+Implementing security for sensitive data, especially in a HIPAA-compliant React web app, requires thoughtful integration of encryption techniques and secure storage options. Here’s how you can set up offline-friendly user onboarding, data storage, and security features:
+
+### 1. **User Onboarding with Secure Storage**
+
+Using an offline-first approach, you’ll need to integrate a way to cache user data securely on the client side. Here's a breakdown:
+
+- **User Authentication**: Start by using the Rownd SDK for user authentication. Rownd will simplify the OAuth flow and securely store the user’s tokens without needing complex session management.
+- **Local Data Storage**: Securely cache necessary data offline, so the app remains functional without connectivity. Use IndexedDB or Secure Storage APIs with encryption at rest to protect sensitive data. This offline data storage should be encrypted with a symmetric key generated during the user session.
+- **User Session Key**: Generate a random session key upon user authentication and store it temporarily for encrypting/decrypting data. This key will be derived using the user’s authentication token.
+
+### 2. **Encryption at Rest**
+
+All sensitive data stored offline (e.g., in IndexedDB) should be encrypted. Here's how you can implement it:
+
+1. **Key Derivation (PBKDF2)**: Use the PBKDF2 function to derive a strong encryption key from the user's authentication token or password. Set parameters like iterations and salt for enhanced security. 
+
+   ```javascript
+   async function deriveKey(password, salt) {
+       const encoder = new TextEncoder();
+       const keyMaterial = await crypto.subtle.importKey(
+           "raw",
+           encoder.encode(password),
+           "PBKDF2",
+           false,
+           ["deriveKey"]
+       );
+       return crypto.subtle.deriveKey(
+           {
+               name: "PBKDF2",
+               salt: salt,
+               iterations: 100000,
+               hash: "SHA-256"
+           },
+           keyMaterial,
+           { name: "AES-GCM", length: 256 },
+           true,
+           ["encrypt", "decrypt"]
+       );
+   }
+   ```
+
+2. **Encryption and Decryption**: Use AES-GCM for authenticated encryption, ensuring both confidentiality and integrity of data. A unique Initialization Vector (IV) should be randomly generated for each encryption operation.
+
+   ```javascript
+   async function encryptData(data, key) {
+       const encoder = new TextEncoder();
+       const iv = crypto.getRandomValues(new Uint8Array(12)); // Random IV
+       const encrypted = await crypto.subtle.encrypt(
+           {
+               name: "AES-GCM",
+               iv: iv
+           },
+           key,
+           encoder.encode(data)
+       );
+       return { encryptedData: encrypted, iv };
+   }
+   ```
+
+3. **Secure Storage**: Once encrypted, store data in IndexedDB or Secure Storage, ensuring the stored data remains protected even if access to the device is compromised.
+
+### 3. **Key Rotation**
+
+Key rotation involves periodically updating encryption keys to limit data exposure. Here’s how to handle it:
+
+1. **Generate a New Key**: Regularly derive a new encryption key (every few months or after significant changes) using PBKDF2 and a new salt.
+2. **Re-Encrypt Data**: Decrypt all stored data with the old key, then re-encrypt it using the new key.
+3. **Store Key Metadata**: Keep track of key rotation dates and versions, allowing backward compatibility if older keys need to be used temporarily.
+
+### 4. **Secure Key Storage**
+
+Use browser APIs like Web Crypto and IndexedDB for secure storage. Here’s the approach:
+
+- **Key Storage**: Store derived keys in memory rather than in persistent storage. Only store necessary metadata (e.g., salts, IVs) in IndexedDB, encrypted with a master key.
+- **Session Expiry**: Automatically clear keys and session-related data when the user logs out or after a period of inactivity.
+
+### 5. **Data Integrity Checks**
+
+AES-GCM inherently supports authenticated encryption, which verifies both data integrity and authenticity on decryption. Implement additional checks if required:
+
+1. **Data Hashing**: Store a hash of the data (e.g., SHA-256) alongside it and verify the hash on every read operation.
+2. **Version Control**: Implement versioning to detect stale or tampered data.
+
+### Security Best Practices
+
+1. **Random IV Generation**: Always generate a new IV for each encryption operation using `crypto.getRandomValues()` to ensure encryption is unique each time.
+
+2. **Authenticated Encryption (AES-GCM)**: Use AES-GCM for encryption due to its built-in authentication mechanism, ensuring data authenticity.
+
+3. **Key Derivation with PBKDF2**: PBKDF2 is a reliable method to generate encryption keys from user data, and setting high iterations and a unique salt further strengthens security.
+
+4. **Secure Error Handling**: Avoid leaking sensitive information through error messages. Display generic error messages to the user and log detailed errors only on the server side if necessary.
+
+### Sample Workflow for Implementation
+
+1. **User logs in** → Rownd SDK handles authentication.
+2. **Generate encryption key** using PBKDF2 and the user’s token.
+3. **Encrypt data** to be stored offline with AES-GCM and a random IV.
+4. **Store data securely** in IndexedDB or Secure Storage.
+5. **On data retrieval**, decrypt using the stored key, ensuring integrity through AES-GCM's built-in authentication.
+6. **Log out or inactivity** → Clear derived keys and sensitive data from local storage.
