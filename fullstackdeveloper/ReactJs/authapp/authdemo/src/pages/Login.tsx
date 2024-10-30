@@ -1,23 +1,24 @@
 
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { Alert, Button, Card, Container, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Credentials } from '../types/auth';
+import { AuthContext } from '../context/AuthContext';
 
 export const Login: React.FC = () => {
-  const [credentials, setCredentials] = useState<Credentials>({
+  const context = useContext(AuthContext);
+  const [credentials, setCredentials] = useState<{username: string, password: string}>({
     username: '',
     password: '',
   });
   const [error, setError] = useState<string>('');
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const login = context?.login(credentials.username);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (credentials.username === 'admin' && credentials.password === 'password') {
-      login(credentials.username);
+    if ((credentials.username === 'admin' && credentials.password === 'password')) {
+      context?.login(credentials.username)
+      alert(context?)
       navigate('/secure');
     } else {
       setError('Invalid credentials');

@@ -1,15 +1,15 @@
 
-import React from 'react';
+import React, { useContext } from 'react';
 import { Button, Container, Nav, Navbar } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { AuthContext } from '../context/AuthContext';
 
 export const NavBarLocal: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
+  const context = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    context?.logout();
     navigate('/login');
   };
 
@@ -25,7 +25,7 @@ export const NavBarLocal: React.FC = () => {
             <Nav.Link as={Link} to="/">
               Home
             </Nav.Link>
-            {isAuthenticated ? (
+            {context?.isAuthenticated ? (
               <Nav.Link as={Link} to="/secure">
                 Secure Page
               </Nav.Link>
@@ -35,7 +35,7 @@ export const NavBarLocal: React.FC = () => {
               </Nav.Link>
             )}
           </Nav>
-          {isAuthenticated && (
+          {context?.isAuthenticated && (
             <Button variant="outline-primary" onClick={handleLogout}>
               Logout
             </Button>

@@ -1,12 +1,12 @@
 
-import React from 'react';
+import { AuthContext, logout  } from '../context/AuthContext';
+import React, { useContext } from 'react';
 import { Button, Card, Container } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 
 export const SecurePage: React.FC = () => {
   const navigate = useNavigate();
-  const { logout, user } = useAuth();
+  const context = useContext(AuthContext);
 
   const handleLogout = () => {
     logout();
@@ -23,7 +23,7 @@ export const SecurePage: React.FC = () => {
               Logout
             </Button>
           </div>
-          <Card.Text>Welcome, {user?.username}!</Card.Text>
+          <Card.Text>Welcome, {context?.username}!</Card.Text>
           <Card.Text className="text-muted">
             This is a protected page that can only be accessed by authenticated
             users.
