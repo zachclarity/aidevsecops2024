@@ -5,6 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   plugins: [
+    root: './',
+    build: { outDir: './build' },
     react(),
     VitePWA({
       registerType: 'autoUpdate',
