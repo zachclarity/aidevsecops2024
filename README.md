@@ -3,6 +3,7 @@
 
 <hr>
 Let's share knowledge and Learn Together by building real world solutions using some of the latest technologies. We will include example code, configuration, study notes and more.
+TBD 
 
 #AWS Solutions Architect
 <ul>
