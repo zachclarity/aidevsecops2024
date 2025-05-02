@@ -1,0 +1,24 @@
+    -- V2: Seed person data from CSV file using a placeholder
+
+    -- ==========================================================================
+    -- IMPORTANT NOTES FOR USING COPY FROM FILE:
+    -- (Notes 1, 3, 4, 5 from the previous version still apply)
+    --
+    -- 2. PATH SPECIFICATION (Using Placeholder):
+    --    The path is now specified using the Flyway placeholder '${csv.seed.file.path}'.
+    --    This placeholder's value MUST be configured in your Spring Boot application
+    --    (e.g., via application.properties, environment variables, or system properties).
+    --    The resolved path MUST be an ABSOLUTE path on the database server's filesystem
+    --    where the 'persons_seed.csv' file is located and readable by the PostgreSQL process.
+    -- ==========================================================================
+
+    -- Specify the columns in the target table in the order they appear in the CSV file.
+    COPY person (first_name, last_name, email)
+    -- Use the Flyway placeholder for the CSV file path.
+    FROM '${csv.seed.file.path}'
+    -- Specify the format details of the CSV file.
+    WITH (FORMAT CSV, DELIMITER ',', HEADER FALSE);
+
+    -- Optional: Log completion
+    -- SELECT 'Finished seeding person table from CSV file ${csv.seed.file.path}';
+    
