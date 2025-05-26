@@ -84,11 +84,27 @@ async function scrapeEvents(url) {
 }
 
 async function saveToFile(data, filename = 'scraped_events.json') {
-  await fs.writeFile(filename, JSON.stringify(data, null, 2), 'utf-8');
+   const f2 = process.argv[3];
+  if (!f2) {
+    console.error('Error: Please provide a filename as a command-line argument');
+    process.exit(1);
+  }
+  await fs.writeFile(f2, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 (async () => {
-  const targetUrl = 'https://www.montgomeryal.gov/play/city-events/-toggle-all';
+   const targetUrl = process.argv[2];
+  if (!targetUrl) {
+    console.error('Error: Please provide a URL as a command-line argument');
+    console.error('Example: node scrape_events.js https://www.montgomeryal.gov/play/city-events/-toggle-all/-npage-1');
+    process.exit(1);
+  }
+    const f2 = process.argv[3];
+  if (!f2) {
+    console.error('Error: Please provide a filename as a command-line argument');
+    process.exit(1);
+  }
+  //const targetUrl = 'https://www.montgomeryal.gov/play/city-events/-toggle-all/-npage-1';
   try {
     const events = await scrapeEvents(targetUrl);
     await saveToFile(events);
