@@ -1,5 +1,9 @@
 # Playwright Demo
 
+```
+node index.js https://www.montgomeryal.gov/play/city-events/-toggle-allupcoming/-npage-1 example.json
+```
+
 ### **Step 1: Install Node.js**
 
 Playwright requires Node.js (version 16 or later). If you don’t have it, download and install it:
