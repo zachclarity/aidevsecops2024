@@ -1,0 +1,304 @@
+[
+  {
+    "event_id": "event_1",
+    "title": "Food & Grooves Pet Day in the Park",
+    "date": "JUN 28",
+    "time": "11:00 AM - 2:00 PM",
+    "categories": [
+      "Community Events",
+      "Parks & Recreation Events",
+      "Family Friendly Events",
+      "FREE Events",
+      "City Events",
+      "Outdoor Events",
+      "Food Truck Events",
+      "Pet Friendly Events"
+    ],
+    "description": "A free day of fun entertainment!"
+  },
+  {
+    "event_id": "event_2",
+    "title": "Summer in the City Block Party",
+    "date": "JUN 28",
+    "time": "2:00 PM - 5:00 PM",
+    "categories": [
+      "Community Events",
+      "FREE Events",
+      "City Events",
+      "Outdoor Events",
+      "Cultural Affairs Events",
+      "Food Truck Events"
+    ],
+    "description": "Afternoon of fun, music, and community vibes!"
+  },
+  {
+    "event_id": "event_3",
+    "title": "Thrifty Tuesdays",
+    "date": "JUL 01",
+    "time": "12:00 PM - 4:00 PM",
+    "categories": [
+      "Community Events",
+      "Zoo Events",
+      "Family Friendly Events"
+    ],
+    "description": "Discounted admissions, every Tuesday during June and July, 12pm (noon) - 4pm"
+  },
+  {
+    "event_id": "event_4",
+    "title": "Independence Day, July 4, Zoo/Museum OPEN",
+    "date": "JUL 04",
+    "time": "9:30 AM - 3:30 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Community Center Events & Programs"
+    ],
+    "description": "Celebrate Independence Day at the Montgomery Zoo and Mann Wildlife Learning Museum. The Zoo and Museum will be open Tuesday, July 4 for Independence Day for all to enjoy."
+  },
+  {
+    "event_id": "event_5",
+    "title": "Independence Day Celebration",
+    "date": "JUL 04",
+    "time": "8:00 PM - 9:30 PM",
+    "categories": [
+      "Community Events",
+      "Family Friendly Events",
+      "FREE Events",
+      "City Events",
+      "Outdoor Events",
+      "Cultural Affairs Events",
+      "Food Truck Events"
+    ],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_6",
+    "title": "Zoofari Summer Camp: 9-10 year olds, July 7-11",
+    "date": "JUL 07",
+    "time": "JULY 07, 2025, 8:30 AM - JULY 11, 2025, 4:30 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Community Center Events & Programs"
+    ],
+    "description": "Join us for Zoofari Summer Camp at the Montgomery Zoo and Mann Wildlife Learning Museum. The perfect way for your camper to enjoy a WILD summer. Summer camp is designed for boys and girls to enjoy a full-day zoo experience filled with adventure and fun. SPACE IS LIMITED!"
+  },
+  {
+    "event_id": "event_7",
+    "title": "Thrifty Tuesdays",
+    "date": "JUL 08",
+    "time": "12:00 PM - 4:00 PM",
+    "categories": [
+      "Community Events",
+      "Zoo Events",
+      "Family Friendly Events"
+    ],
+    "description": "Discounted admissions, every Tuesday during June and July, 12pm (noon) - 4pm"
+  },
+  {
+    "event_id": "event_8",
+    "title": "Zoofari Summer Camp: 9-10 year olds, July 14-18",
+    "date": "JUL 14",
+    "time": "JULY 14, 2025, 8:30 AM - JULY 18, 2025, 4:30 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Community Center Events & Programs"
+    ],
+    "description": "Join us for Zoofari Summer Camp at the Montgomery Zoo and Mann Wildlife Learning Museum. The perfect way for your camper to enjoy a WILD summer. Summer camp is designed for boys and girls to enjoy a full-day zoo experience filled with adventure and fun. SPACE IS LIMITED!"
+  },
+  {
+    "event_id": "event_9",
+    "title": "Thrifty Tuesdays",
+    "date": "JUL 15",
+    "time": "12:00 PM - 4:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "Discounted admissions, every Tuesday during June and July, 12pm (noon) - 4pm"
+  },
+  {
+    "event_id": "event_10",
+    "title": "Color Run/Walk 5K with Move Montgomery",
+    "date": "JUL 19",
+    "time": "7:00 AM - 2:00 PM",
+    "categories": [
+      "Community Events",
+      "Family Friendly Events",
+      "FREE Events",
+      "Health and Fitness Events",
+      "City Events",
+      "Outdoor Events",
+      "Cultural Affairs Events"
+    ],
+    "description": "Registration for the event is FREE!"
+  },
+  {
+    "event_id": "event_11",
+    "title": "Junior Zookeeper Summer Camp, 11-12 year old, July 21-25",
+    "date": "JUL 21",
+    "time": "JULY 21, 2025, 8:30 AM - JULY 25, 2025, 4:30 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Community Center Events & Programs"
+    ],
+    "description": "Join us for Junior Zookeeper Summer Camp at the Montgomery Zoo and Mann Wildlife Learning Museum. The perfect way for your camper to enjoy a WILD summer. Summer camp is designed for boys and girls to enjoy a full-day zoo experience filled with adventure and fun. SPACE IS LIMITED!"
+  },
+  {
+    "event_id": "event_12",
+    "title": "Thrifty Tuesdays",
+    "date": "JUL 22",
+    "time": "12:00 PM - 4:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "Discounted admissions, every Tuesday during June and July, 12pm (noon) - 4pm"
+  },
+  {
+    "event_id": "event_13",
+    "title": "Back to School Bash",
+    "date": "JUL 26",
+    "time": "10:00 AM - 1:00 PM",
+    "categories": [
+      "Community Events",
+      "Parks & Recreation Events",
+      "Family Friendly Events",
+      "FREE Events",
+      "City Events",
+      "Festivals",
+      "Community Center Events & Programs"
+    ],
+    "description": "Annual Back to School Bash"
+  },
+  {
+    "event_id": "event_14",
+    "title": "Thrifty Tuesdays",
+    "date": "JUL 29",
+    "time": "12:00 PM - 4:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "Discounted admissions, every Tuesday during June and July, 12pm (noon) - 4pm"
+  },
+  {
+    "event_id": "event_15",
+    "title": "Zoo Volunteer Serve Day",
+    "date": "AUG 23",
+    "time": "9:30 AM - 3:30 PM",
+    "categories": [
+      "Community Events",
+      "Zoo Events",
+      "Family Friendly Events"
+    ],
+    "description": "We are looking for energetic individuals who want to volunteer in a beautiful and fun place. Volunteer commitment has allowed our Zoo to improve, expand programs, generate community involvement and support, and assist Zoo staff in daily Zoo operations."
+  },
+  {
+    "event_id": "event_16",
+    "title": "Magical Creatures Education Program",
+    "date": "AUG 23",
+    "time": "10:00 AM - 12:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "Meet some of the magical animals that are featured in the movies like Harry Potter and The Hobbit. You will get a chance to meet animals up close, learn about them in their habitats, and take home some special prizes for yourself."
+  },
+  {
+    "event_id": "event_17",
+    "title": "HBCU Afterglow Concert Series",
+    "date": "AUG 29",
+    "time": "AUGUST 29, 2025 - AUGUST 30, 2025",
+    "categories": [
+      "Community Events",
+      "Concerts",
+      "Family Friendly Events",
+      "FREE Events",
+      "City Events",
+      "Outdoor Events",
+      "Cultural Affairs Events"
+    ],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_18",
+    "title": "Labor Day Weekend, Zoo/Museum OPEN",
+    "date": "SEP 01",
+    "time": "9:30 AM - 3:30 PM",
+    "categories": [
+      "Community Events",
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "The Montgomery Zoo and Mann Wildlife Learning Museum will be open regular hours on Monday, September 1."
+  },
+  {
+    "event_id": "event_19",
+    "title": "Animal Enrichment Day",
+    "date": "SEP 06",
+    "time": "10:00 AM - 3:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "The goal of Animal Enrichment is to safely stimulate and reproduce behaviors that are natural for each animal in the wild. Placing different stimuli in the animals’ environment allows animals to use their five basic senses while they exercise. It is a lot of trial and error, but it is always fun!"
+  },
+  {
+    "event_id": "event_20",
+    "title": "Grandparent's Day at Zoo",
+    "date": "SEP 07",
+    "time": "9:30 AM - 3:30 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Community Center Events & Programs"
+    ],
+    "description": "Celebrate Grandparent’s Day at the Montgomery Zoo and Mann Wildlife Learning Museum, September 7. All Grandparents receive FREE admission, so make plans to join us for our Grandparent's special day."
+  },
+  {
+    "event_id": "event_21",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_22",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_23",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_24",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  }
+]

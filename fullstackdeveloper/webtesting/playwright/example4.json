@@ -1,0 +1,86 @@
+[
+  {
+    "event_id": "event_1",
+    "title": "Christmas Lights Festival",
+    "date": "DEC 02",
+    "time": "DECEMBER 02, 2025, 5:30 PM - DECEMBER 27, 2025, 9:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Holiday Events",
+      "Festivals"
+    ],
+    "description": "See the Montgomery Zoo transformed into a Winter Wonderland displaying thousands of sparkling and twinkling lights and festive decorations at Christmas Lights Festival. Take a leisurely stroll, a brisk train ride, or see the lights from atop the Zoofari Skylift Adventure Ride."
+  },
+  {
+    "event_id": "event_2",
+    "title": "Christmas Lights Festival, OPENING NIGHT",
+    "date": "DEC 02",
+    "time": "6:00 PM - 9:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Festivals"
+    ],
+    "description": "See the Montgomery Zoo transformed into a Winter Wonderland displaying thousands of sparkling and twinkling lights and festive decorations at Christmas Lights Festival. Take a leisurely stroll, a brisk train ride, or see the lights from atop the Zoofari Skylift Adventure Ride."
+  },
+  {
+    "event_id": "event_3",
+    "title": "Closed Christmas Day Dec 25, opens at 5:30pm for Light Festival",
+    "date": "DEC 25",
+    "time": "5:30 PM - 9:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events",
+      "Festivals"
+    ],
+    "description": "The Montgomery Zoo and Mann Wildlife Learning Museum are closed during the Christmas Day holiday, December 25; however, OPEN at 5:30pm for Christmas Lights Festival."
+  },
+  {
+    "event_id": "event_4",
+    "title": "Martin Luther King Day / Zoo open",
+    "date": "JAN 19",
+    "time": "9:00 AM - 4:00 PM",
+    "categories": [
+      "Zoo Events",
+      "Family Friendly Events",
+      "City Events"
+    ],
+    "description": "The Montgomery Zoo and Mann Wildlife Learning Museum are OPEN on Martin Luther King, Jr. Day. We look forward to seeing you at the Zoo."
+  },
+  {
+    "event_id": "event_5",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_6",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_7",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  },
+  {
+    "event_id": "event_8",
+    "title": "N/A",
+    "date": "N/A N/A",
+    "time": "N/A",
+    "categories": [],
+    "description": "N/A"
+  }
+]
