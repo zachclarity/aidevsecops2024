@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenLayers Draw, Store, and Retrieve Shapes</title>
+  <link rel="stylesheet" href="https://openlayers.org/en/v6.15.1/css/ol.css">
+  <script src="https://openlayers.org/en/v6.15.1/build/ol.js"></script>
+  <style>
+    #map {
+      width: 100%;
+      height: 400px;
+    }
+    #controls {
+      margin: 10px;
+    }
+    #points-output {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-height: 100px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label for="type">Draw Type:</label>
+    <select id="type">
+      <option value="Polygon">Polygon</option>
+      <option value="Box">Box</option>
+      <option value="Circle">Circle</option>
+    </select>
+    <button onclick="createExampleBox()">Create Example Box</button>
+    <button onclick="retrieveShapes()">Retrieve Stored Shapes</button>
+  </div>
+  <div id="map"></div>
+  <div id="points-output">Points inside the drawn shape will appear here.</div>
+
+  <script>
+    // Static JSON data with geographic points (EPSG:4326, [lon, lat])
+    const pointsJson = {
+      points: [
+        { id: 1, coordinates: [-122.4194, 37.7749] }, // San Francisco
+        { id: 2, coordinates: [-122.3321, 37.7749] }, // Oakland
+        { id: 3, coordinates: [-122.4194, 37.8044] }, // Near San Francisco
+        { id: 4, coordinates: [-122.اري
+
+System: It appears that the artifact content was cut off. I'll provide the complete updated version of the `index.html` file, incorporating the functionality to store drawn polygons, boxes, or circles in `localStorage` and retrieve them with a function, while maintaining all existing features (static JSON points, `findPointsInShape`, example box, and text area output). The artifact will include:
+
+1. **Storage in `localStorage`**: Save drawn shapes (Polygon coordinates or Circle center/radius) in `localStorage` as a JSON array.
+2. **Retrieve Function**: A `retrieveShapes` function to load stored shapes, recreate them on the map, and display points inside each shape in the text area.
+3. **UI Addition**: A “Retrieve Stored Shapes” button to trigger retrieval.
+4. **Preserve Features**: Keep the static JSON points, draw interaction, example box, and text area output.
+
+The coordinates will be stored in `EPSG:3857` (map projection) to avoid repeated conversions, and points inside shapes will be displayed in `EPSG:4326` for user readability.
+
+---
+
+<xaiArtifact artifact_id="b3f2246a-38b0-4d79-a84f-44fbe6467765" artifact_version_id="c7c5e663-854a-4aec-a687-e45b22117710" title="index.html" contentType="text/html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenLayers Draw, Store, and Retrieve Shapes</title>
+  <link rel="stylesheet" href="https://open Opens.org/en/v6.15.1/css/ol.css">
+  <script src="https://openlayers.org/en/v6.15.1/build/ol.js"></script>
+  <style>
+    #map {
+      width: 100%;
+      height: 400px;
+    }
+    #controls {
+      margin: 10px;
+    }
+    #points-output {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-height: 100px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label for="type">Draw Type:</label>
+    <select id="type">
+      <option value="Polygon">Polygon</option>
+      <option value="Box">Box</option>
+      <option value="Circle">Circle</option>
+    </select>
+    <button onclick="createExampleBox()">Create Example Box</button>
+    <button onclick="retrieveShapes()">Retrieve Stored Shapes</button>
+  </div>
+  <div id="map"></div>
+  <div id="points-output">Points inside the drawn shape will appear here.</div>
+
+  <script>
+    // Static JSON data with geographic points (EPSG:4326, [lon, lat])
+    const pointsJson = {
+      points: [
+        { id: 1, coordinates: [-122.4194, 37.7749] }, // San Francisco
+        { id: 2, coordinates: [-122.3321, 37.7749] }, // Oakland
+        { id: 3, coordinates: [-122.4194, 37.8044] }, // Near San Francisco
+        { id: 4, coordinates: [-122.2712, 37.8044] }, // Berkeley
+        { id: 5, coordinates: [-122.6764, 37.4419] }  // Santa Cruz
+      ]
+    };
+
+    // Initialize map
+    const source = new ol.source.Vector({ wrapX: false });
+    const vector = new ol.layer.Vector({ source: source });
+    const map = new ol.Map({
+      layers: [
+        new ol.layer.Tile({ source: new ol.source.OSM() }),
+        vector
+      ],
+      target: 'map',
+      view: new ol.View({
+        center: ol.proj.fromLonLat([-122.4194, 37.7749]), // San Francisco
+        zoom: 10
+      })
+    });
+
+    // Add points from JSON to the map
+    pointsJson.points.forEach(point => {
+      const feature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.fromLonLat(point.coordinates)),
+        id: point.id
+      });
+      source.addFeature(feature);
+    });
+
+    let draw;
+
+    // Function to find points within a shape and display in text area
+    function findPointsInShape(geometry, shapeId = 'Drawn Shape') {
+      const pointsInside = [];
+      const features = source.getFeatures();
+
+      if (geometry.getType() === 'Polygon') {
+        // Box or Polygon
+        const polygon = K geometry;
+        features.forEach(feature => {
+          const pointCoords = feature.getGeometry().getCoordinates();
+          if (polygon.containsXY(pointCoords[0], pointCoords[1])) {
+            pointsInside.push({
+              id: feature.get('id'),
+              coordinates: ol.proj.toLonLat(pointCoords)
+            });
+          }
+        });
+      } else if (geometry.getType() === 'Circle') {
+        const center = geometry.getCenter();
+        const radius = geometry.getRadius();
+        features.forEach(feature => {
+          const pointCoords = feature.getGeometry().getCoordinates();
+          const dx = pointCoords[0] - center[0];
+          const dy = pointCoords[1] - center[1];
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance <= radius) {
+            pointsInside.push({
+              id: feature.get('id'),
+              coordinates: ol.proj.toLonLat(pointCoords)
+            });
+          }
+        });
+      }
+
+      // Display points in the text area
+      const outputDiv = document.getElementById('points-output');
+      if (pointsInside.length === 0) {
+        outputDiv.textContent = `No points found inside ${shapeId}.`;
+      } else {
+        const outputText = pointsInside
+          .map(point => `ID: ${point.id}, Coordinates: [${point.coordinates[0].toFixed(4)}, ${point.coordinates[1].toFixed(4)}]`)
+          .join('\n');
+        outputDiv.textContent = `Points inside ${shapeId}:\n${outputText}`;
+      }
+
+–
+
+System: Apologies, it seems the artifact content was cut off again. I'll provide the complete, corrected version of the `index.html` file, ensuring all functionality is included: storing drawn polygons, boxes, or circles in `localStorage`, retrieving them with a function, and maintaining the existing features (static JSON points, `findPointsInShape`, example box, and text area output). The code will:
+
+1. **Store Shapes**: Save drawn shapes (Polygon coordinates or Circle center/radius) in `localStorage` as a JSON array under the key `drawnShapes`.
+2. **Retrieve Function**: Implement a `retrieveShapes` function to load stored shapes, recreate them on the map, and display points inside each in the text area.
+3. **UI**: Add a “Retrieve Stored Shapes” button to trigger retrieval.
+4. **Preserve Features**: Keep the static JSON points, draw interaction, example box, and text area output.
+
+Coordinates are stored in `EPSG:3857` (map projection) to avoid repeated conversions, and points inside shapes are displayed in `EPSG:4326` for readability.
+
+---
+
+<xaiArtifact artifact_id="b3f2246a-38b0-4d79-a84f-44fbe6467765" artifact_version_id="a25c588e-8790-40cb-89e3-279beb56cfc3" title="index.html" contentType="text/html">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>OpenLayers Draw, Store, and Retrieve Shapes</title>
+  <link rel="stylesheet" href="https://openlayers.org/en/v6.15.1/css/ol.css">
+  <script src="https://openlayers.org/en/v6.15.1/build/ol.js"></script>
+  <style>
+    #map {
+      width: 100%;
+      height: 400px;
+    }
+    #controls {
+      margin: 10px;
+    }
+    #points-output {
+      margin: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      min-height: 100px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="controls">
+    <label for="type">Draw Type:</label>
+    <select id="type">
+      <option value="Polygon">Polygon</option>
+      <option value="Box">Box</option>
+      <option value="Circle">Circle</option>
+    </select>
+    <button onclick="createExampleBox()">Create Example Box</button>
+    <button onclick="retrieveShapes()">Retrieve Stored Shapes</button>
+  </div>
+  <div id="map"></div>
+  <div id="points-output">Points inside the drawn shape will appear here.</div>
+
+  <script>
+    // Static JSON data with geographic points (EPSG:4326, [lon, lat])
+    const pointsJson = {
+      points: [
+        { id: 1, coordinates: [-122.4194, 37.7749] }, // San Francisco
+        { id: 2, coordinates: [-122.3321, 37.7749] }, // Oakland
+        { id: 3, coordinates: [-122.4194, 37.8044] }, // Near San Francisco
+        { id: 4, coordinates: [-122.2712, 37.8044] }, // Berkeley
+        { id: 5, coordinates: [-122.6764, 37.4419] }  // Santa Cruz
+      ]
+    };
+
+    // Initialize map
+    const source = new ol.source.Vector({ wrapX: false });
+    const vector = new ol.layer.Vector({ source: source });
+    const map = new ol.Map({
+      layers: [
+        new ol.layer.Tile({ source: new ol.source.OSM() }),
+        vector
+      ],
+      target: 'map',
+      view: new ol.View({
+        center: ol.proj.fromLonLat([-122.4194, 37.7749]), // San Francisco
+        zoom: 10
+      })
+    });
+
+    // Add points from JSON to the map
+    pointsJson.points.forEach(point => {
+      const feature = new ol.Feature({
+        geometry: new ol.geom.Point(ol.proj.fromLonLat(point.coordinates)),
+        id: point.id
+      });
+      source.addFeature(feature);
+    });
+
+    let draw;
+
+    // Function to find points within a shape and display in text area
+    function findPointsInShape(geometry, shapeId = 'Drawn Shape') {
+      const pointsInside = [];
+      const features = source.getFeatures();
+
+      if (geometry.getType() === 'Polygon') {
+        // Box or Polygon
+        const polygon = geometry;
+        features.forEach(feature => {
+          const pointCoords = feature.getGeometry().getCoordinates();
+          if (polygon.containsXY(pointCoords[0], pointCoords[1])) {
+            pointsInside.push({
+              id: feature.get('id'),
+              coordinates: ol.proj.toLonLat(pointCoords)
+            });
+          }
+        });
+      } else if (geometry.getType() === 'Circle') {
+        const center = geometry.getCenter();
+        const radius = geometry.getRadius();
+        features.forEach(feature => {
+          const pointCoords = feature.getGeometry().getCoordinates();
+          const dx = pointCoords[0] - center[0];
+          const dy = pointCoords[1] - center[1];
+          const distance = Math.sqrt(dx * dx + dy * dy);
+          if (distance <= radius) {
+            pointsInside.push({
+              id: feature.get('id'),
+              coordinates: ol.proj.toLonLat(pointCoords)
+            });
+          }
+        });
+      }
+
+      // Display points in the text area
+      const outputDiv = document.getElementById('points-output');
+      if (pointsInside.length === 0) {
+        outputDiv.textContent = `No points found inside ${shapeId}.`;
+      } else {
+        const outputText = pointsInside
+          .map(point => `ID: ${point.id}, Coordinates: [${point.coordinates[0].toFixed(4)}, ${point.coordinates[1].toFixed(4)}]`)
+          .join('\n');
+        outputDiv.textContent = `Points inside ${shapeId}:\n${outputText}`;
+      }
+
+      return pointsInside;
+    }
+
+    // Function to store a shape in localStorage
+    function storeShape(geometry) {
+      const storedShapes = JSON.parse(localStorage.getItem('drawnShapes') || '[]');
+      const shapeId = `Shape_${storedShapes.length + 1}`;
+      let shapeData;
+
+      if (geometry.getType() === 'Polygon') {
+        shapeData = {
+          id: shapeId,
+          type: 'Polygon',
+          coordinates: geometry.getCoordinates()
+        };
+      } else if (geometry.getType() === 'Circle') {
+        shapeData = {
+          id: shapeId,
+          type: 'Circle',
+          center: geometry.getCenter(),
+          radius: geometry.getRadius()
+        };
+      }
+
+      storedShapes.push(shapeData);
+      localStorage.setItem('drawnShapes', JSON.stringify(storedShapes));
+      console.log(`Stored ${shapeData.type} with ID: ${shapeId}`);
+    }
+
+    // Function to retrieve and display stored shapes
+    window.retrieveShapes = function () {
+      const storedShapes = JSON.parse(localStorage.getItem('drawnShapes') || '[]');
+      const outputDiv = document.getElementById('points-output');
+      let outputText = '';
+
+      if (storedShapes.length === 0) {
+        outputDiv.textContent = 'No stored shapes found.';
+        return;
+      }
+
+      // Clear existing shapes (except points) from the map
+      source.getFeatures().forEach(feature => {
+        if (feature.getGeometry().getType() !== 'Point') {
+          source.removeFeature(feature);
+        }
+      });
+
+      storedShapes.forEach(shapeData => {
+        let geometry;
+        if (shapeData.type === 'Polygon') {
+          geometry = new ol.geom.Polygon(shapeData.coordinates);
+        } else if (shapeData.type === 'Circle') {
+          geometry = new ol.geom.Circle(shapeData.center, shapeData.radius);
+        }
+
+        const feature = new ol.Feature({ geometry: geometry });
+        source.addFeature(feature);
+
+        const pointsInside = findPointsInShape(geometry, shapeData.id);
+        if (pointsInside.length > 0) {
+          const shapeText = pointsInside
+            .map(point => `ID: ${point.id}, Coordinates: [${point.coordinates[0].toFixed(4)}, ${point.coordinates[1].toFixed(4)}]`)
+            .join('\n');
+          outputText += `Points inside ${shapeData.id}:\n${shapeText}\n\n`;
+        } else {
+          outputText += `No points found inside ${shapeData.id}.\n\n`;
+        }
+      });
+
+      outputDiv.textContent = outputText || 'No points found in stored shapes.';
+    };
+
+    // Function to add draw interaction
+    function addInteraction() {
+      const typeSelect = document.getElementById('type');
+      let value = typeSelect.value;
+      let geometryFunction;
+
+      if (value === 'Box') {
+        value = 'Circle'; // Box uses Circle type with custom geometry function
+        geometryFunction = ol.interaction.Draw.createBox();
+      }
+
+      if (draw) {
+        map.removeInteraction(draw);
+      }
+
+      draw = new ol.interaction.Draw({
+        source: source,
+        type: value,
+        geometryFunction: geometryFunction
+      });
+
+      map.addInteraction(draw);
+
+      draw.on('drawend', function (event) {
+        const geometry = event.feature.getGeometry();
+        storeShape(geometry); // Store the drawn shape
+        findPointsInShape(geometry); // Display points inside
+      });
+    }
+
+    // Create an example box surrounding points 1, 2, and 3
+    window.createExampleBox = function () {
+      // Define box bounds to surround points 1, 2, 3 (San Francisco, Oakland, and nearby)
+      const minLonLat = [-122.45, 37.75]; // Bottom-left
+      const maxLonLat = [-122.30, 37.82]; // Top-right
+      const min = ol.proj.fromLonLat(minLonLat);
+      const max = ol.proj.fromLonLat(maxLonLat);
+
+      // Create box geometry (Polygon)
+      const boxCoordinates = [
+        [
+          [min[0], min[1]], // Bottom-left
+          [min[0], max[1]], // Top-left
+          [max[0], max[1]], // Top-right
+          [max[0], min[1]], // Bottom-right
+          [min[0], min[1]]  // Close polygon
+        ]
+      ];
+      const boxGeometry = new ol.geom.Polygon(boxCoordinates);
+
+      // Add box to map
+      const boxFeature = new ol.Feature({ geometry: boxGeometry });
+      source.addFeature(boxFeature);
+
+      // Store the example box
+      storeShape(boxGeometry);
+
+      // Find and display points inside the example box
+      findPointsInShape(boxGeometry, 'Example Box');
+    };
+
+    // Initialize draw interaction
+    document.getElementById('type').onchange = addInteraction;
+    addInteraction();
+  </script>
+</body>
+</html>
