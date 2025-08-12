@@ -1,0 +1,454 @@
+import React, { useState, useEffect } from 'react';
+
+// Shared data store (simulating localStorage since it's not available in this environment)
+// In a real application, you would use localStorage instead
+const dataStore = {
+  items: [],
+  listeners: [],
+  
+  getItems() {
+    // In real app: return JSON.parse(localStorage.getItem('sharedItems') || '[]')
+    return this.items;
+  },
+  
+  setItems(newItems) {
+    // In real app: localStorage.setItem('sharedItems', JSON.stringify(newItems))
+    this.items = newItems;
+    this.notifyListeners();
+  },
+  
+  subscribe(listener) {
+    this.listeners.push(listener);
+    return () => {
+      this.listeners = this.listeners.filter(l => l !== listener);
+    };
+  },
+  
+  notifyListeners() {
+    this.listeners.forEach(listener => listener(this.items));
+  }
+};
+
+// Common Input Component
+const CommonInputComponent = ({ 
+  field1Value, 
+  field2Value, 
+  onField1Change, 
+  onField2Change, 
+  onAddClick,
+  field1Options = [],
+  field2Options = [],
+  field1Label = "Field 1",
+  field2Label = "Field 2",
+  buttonLabel = "Add",
+  isEditing = false
+}) => {
+  return (
+    <div className="flex gap-4 items-end mb-4">
+      <div className="flex flex-col">
+        <label className="text-sm font-medium text-gray-700 mb-1">
+          {field1Label}
+        </label>
+        <select
+          value={field1Value}
+          onChange={(e) => onField1Change(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+        >
+          <option value="">Select {field1Label}</option>
+          {field1Options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <div className="flex flex-col">
+        <label className="text-sm font-medium text-gray-700 mb-1">
+          {field2Label}
+        </label>
+        <select
+          value={field2Value}
+          onChange={(e) => onField2Change(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[200px]"
+        >
+          <option value="">Select {field2Label}</option>
+          {field2Options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <button 
+        onClick={onAddClick}
+        disabled={!field1Value || !field2Value}
+        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+      >
+        {isEditing ? 'Update' : buttonLabel}
+      </button>
+    </div>
+  );
+};
+
+// Custom hook to sync with shared storage
+const useSharedStorage = () => {
+  const [items, setItems] = useState(() => dataStore.getItems());
+
+  useEffect(() => {
+    // Subscribe to changes from other components
+    const unsubscribe = dataStore.subscribe((newItems) => {
+      setItems(newItems);
+    });
+
+    // Load initial data
+    setItems(dataStore.getItems());
+
+    return unsubscribe;
+  }, []);
+
+  const updateItems = (newItems) => {
+    dataStore.setItems(newItems);
+    setItems(newItems);
+  };
+
+  return [items, updateItems];
+};
+
+// First Component using Common Input
+const ComponentOne = () => {
+  const [field1, setField1] = useState('');
+  const [field2, setField2] = useState('');
+  const [items, setItems] = useSharedStorage();
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  const field1Options = [
+    { value: 'high', label: 'High Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'low', label: 'Low Priority' }
+  ];
+
+  const field2Options = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'in-progress', label: 'In Progress' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'blocked', label: 'Blocked' }
+  ];
+
+  const handleAdd = () => {
+    const newItem = {
+      id: editingIndex !== null ? items[editingIndex].id : Date.now(),
+      field1,
+      field2,
+      addedBy: 'Component One',
+      timestamp: new Date().toISOString()
+    };
+
+    if (editingIndex !== null) {
+      const updatedItems = [...items];
+      updatedItems[editingIndex] = newItem;
+      setItems(updatedItems);
+      setEditingIndex(null);
+    } else {
+      setItems([...items, newItem]);
+    }
+    
+    setField1('');
+    setField2('');
+  };
+
+  const handleEdit = (index) => {
+    setField1(items[index].field1);
+    setField2(items[index].field2);
+    setEditingIndex(index);
+  };
+
+  const handleDelete = (index) => {
+    const updatedItems = items.filter((_, i) => i !== index);
+    setItems(updatedItems);
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setField1('');
+      setField2('');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setField1('');
+    setField2('');
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Component One - Task Manager</h2>
+      
+      <CommonInputComponent
+        field1Value={field1}
+        field2Value={field2}
+        onField1Change={setField1}
+        onField2Change={setField2}
+        onAddClick={handleAdd}
+        field1Options={field1Options}
+        field2Options={field2Options}
+        field1Label="Priority"
+        field2Label="Status"
+        buttonLabel="Add Task"
+        isEditing={editingIndex !== null}
+      />
+
+      {editingIndex !== null && (
+        <button 
+          onClick={handleCancelEdit}
+          className="mb-4 px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Cancel Edit
+        </button>
+      )}
+      
+      <div className="border-t pt-4">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          Shared Task List ({items.length} items)
+        </h3>
+        
+        {items.length === 0 ? (
+          <p className="text-gray-500">No items added yet. Items added here or in Component Two will appear in both.</p>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item, index) => (
+              <div
+                key={item.id}
+                className={`flex items-center justify-between p-3 rounded-lg border ${
+                  editingIndex === index ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-4">
+                    <span className="font-medium">Priority:</span>
+                    <span className="text-gray-700">
+                      {field1Options.find(o => o.value === item.field1)?.label || item.field1}
+                    </span>
+                    <span className="font-medium">Status:</span>
+                    <span className="text-gray-700">
+                      {field2Options.find(o => o.value === item.field2)?.label || item.field2}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Added by: {item.addedBy} | {new Date(item.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(index)}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(index)}
+                    className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Second Component using Common Input
+const ComponentTwo = () => {
+  const [field1, setField1] = useState('');
+  const [field2, setField2] = useState('');
+  const [items, setItems] = useSharedStorage();
+  const [editingIndex, setEditingIndex] = useState(null);
+
+  const field1Options = [
+    { value: 'high', label: 'High Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'low', label: 'Low Priority' }
+  ];
+
+  const field2Options = [
+    { value: 'pending', label: 'Pending' },
+    { value: 'in-progress', label: 'In Progress' },
+    { value: 'completed', label: 'Completed' },
+    { value: 'blocked', label: 'Blocked' }
+  ];
+
+  const handleAdd = () => {
+    const newItem = {
+      id: editingIndex !== null ? items[editingIndex].id : Date.now(),
+      field1,
+      field2,
+      addedBy: 'Component Two',
+      timestamp: new Date().toISOString()
+    };
+
+    if (editingIndex !== null) {
+      const updatedItems = [...items];
+      updatedItems[editingIndex] = newItem;
+      setItems(updatedItems);
+      setEditingIndex(null);
+    } else {
+      setItems([...items, newItem]);
+    }
+    
+    setField1('');
+    setField2('');
+  };
+
+  const handleEdit = (index) => {
+    setField1(items[index].field1);
+    setField2(items[index].field2);
+    setEditingIndex(index);
+  };
+
+  const handleRemove = (index) => {
+    const updatedItems = items.filter((_, i) => i !== index);
+    setItems(updatedItems);
+    if (editingIndex === index) {
+      setEditingIndex(null);
+      setField1('');
+      setField2('');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setField1('');
+    setField2('');
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <h2 className="text-2xl font-bold mb-4 text-gray-800">Component Two - Task Tracker</h2>
+      
+      <CommonInputComponent
+        field1Value={field1}
+        field2Value={field2}
+        onField1Change={setField1}
+        onField2Change={setField2}
+        onAddClick={handleAdd}
+        field1Options={field1Options}
+        field2Options={field2Options}
+        field1Label="Priority"
+        field2Label="Status"
+        buttonLabel="Add Task"
+        isEditing={editingIndex !== null}
+      />
+
+      {editingIndex !== null && (
+        <button 
+          onClick={handleCancelEdit}
+          className="mb-4 px-3 py-1 text-sm bg-gray-500 text-white rounded hover:bg-gray-600"
+        >
+          Cancel Edit
+        </button>
+      )}
+      
+      <div className="border-t pt-4">
+        <h3 className="text-lg font-semibold mb-3 text-gray-700">
+          Shared Task List ({items.length} items)
+        </h3>
+        
+        {items.length === 0 ? (
+          <p className="text-gray-500">No items added yet. Items added here or in Component One will appear in both.</p>
+        ) : (
+          <div className="space-y-2">
+            {items.map((item, index) => (
+              <div
+                key={item.id}
+                className={`flex items-center justify-between p-3 rounded-lg border ${
+                  editingIndex === index ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                }`}
+              >
+                <div className="flex-1">
+                  <div className="flex items-center gap-4">
+                    <span className="font-medium">Priority:</span>
+                    <span className="text-gray-700">
+                      {field1Options.find(o => o.value === item.field1)?.label || item.field1}
+                    </span>
+                    <span className="font-medium">Status:</span>
+                    <span className="text-gray-700">
+                      {field2Options.find(o => o.value === item.field2)?.label || item.field2}
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Added by: {item.addedBy} | {new Date(item.timestamp).toLocaleString()}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleEdit(index)}
+                    className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleRemove(index)}
+                    className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Main App Component
+export default function App() {
+  const [activeTab, setActiveTab] = useState('component1');
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-6">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">
+          Shared Data Components Demo
+        </h1>
+        
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <p className="text-sm text-yellow-800">
+            <strong>Note:</strong> Both components share the same data. Add, edit, or remove items in one component and see them update in the other!
+            In a real application, this would use localStorage for persistence across page refreshes.
+          </p>
+        </div>
+
+        <div className="flex gap-2 mb-6">
+          <button
+            onClick={() => setActiveTab('component1')}
+            className={`px-4 py-2 rounded-t-lg font-medium ${
+              activeTab === 'component1'
+                ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Component One
+          </button>
+          <button
+            onClick={() => setActiveTab('component2')}
+            className={`px-4 py-2 rounded-t-lg font-medium ${
+              activeTab === 'component2'
+                ? 'bg-white text-blue-600 border-b-2 border-blue-600'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            Component Two
+          </button>
+        </div>
+
+        {activeTab === 'component1' ? <ComponentOne /> : <ComponentTwo />}
+      </div>
+    </div>
+  );
+}
